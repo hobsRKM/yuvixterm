@@ -20,7 +20,7 @@
   const demoList = (side) => demoData[side].rows.map(([name, d, size]) => ({ name, isDir: !!d, size, path: pjoin(demoData[side].dir, name), mtime: 0 }));
 
   window.createFileBrowser = function (tabId, session) {
-    const state = { local: { dir: null, entries: [] }, remote: { dir: null, entries: [] } };
+    const state = { local: { dir: null, entries: [], history: [], hi: -1 }, remote: { dir: null, entries: [], history: [], hi: -1 } };
     const root = h('div', 'fb-pane');
     root.innerHTML = `
       <div class="fb-cols">
@@ -32,11 +32,13 @@
       return `<div class="fb-col" data-side="${side}">
         <div class="fb-head"><span class="fb-title">${side === 'local' ? '💻 ' : '🖥 '}${title}</span>
           <span class="fb-tools">
+            <button data-act="back" title="Back" disabled>‹</button>
+            <button data-act="fwd" title="Forward" disabled>›</button>
             <button data-act="up" title="Up">↑</button>
             <button data-act="refresh" title="Refresh">⟳</button>
             <button data-act="mkdir" title="New folder">＋</button>
           </span></div>
-        <div class="fb-path" data-path title=""></div>
+        <div class="fb-path"><span class="fb-crumbs" data-crumbs></span><button class="fb-editpath" data-editpath title="Type a path">✎</button></div>
         <div class="fb-list" data-list></div>
       </div>`;
     }
@@ -46,9 +48,12 @@
 
     // toolbar wiring
     for (const side of ['local', 'remote']) {
-      cols[side].querySelector('[data-act=up]').onclick = () => state[side].dir && load(side, pup(state[side].dir));
+      cols[side].querySelector('[data-act=back]').onclick = () => back(side);
+      cols[side].querySelector('[data-act=fwd]').onclick = () => fwd(side);
+      cols[side].querySelector('[data-act=up]').onclick = () => state[side].dir && go(side, pup(state[side].dir));
       cols[side].querySelector('[data-act=refresh]').onclick = () => state[side].dir && load(side, state[side].dir);
       cols[side].querySelector('[data-act=mkdir]').onclick = () => mkdir(side);
+      cols[side].querySelector('[data-editpath]').onclick = () => editPath(side);
       const listEl = cols[side].querySelector('[data-list]');
       listEl.addEventListener('dragover', (ev) => { ev.preventDefault(); listEl.classList.add('drop'); });
       listEl.addEventListener('dragleave', () => listEl.classList.remove('drop'));
@@ -62,19 +67,52 @@
       : side === 'local' ? api.fm.localList(dir) : api.fm.remoteList(tabId, dir));
 
     async function load(side, dir) {
-      const col = cols[side];
-      col.querySelector('[data-path]').textContent = dir;
-      col.querySelector('[data-path]').title = dir;
-      const listEl = col.querySelector('[data-list]');
+      state[side].dir = dir;
+      renderPath(side, dir);
+      updateNav(side);
+      const listEl = cols[side].querySelector('[data-list]');
       listEl.innerHTML = '<div class="fb-msg">…</div>';
       try {
         const entries = await listApi(side, dir);
-        state[side].dir = dir; state[side].entries = entries;
+        state[side].entries = entries;
         renderList(side, entries);
       } catch (e) {
         listEl.innerHTML = '';
         listEl.appendChild(h('div', 'fb-msg err', esc((e && e.message) || String(e))));
       }
+    }
+
+    // navigation with history
+    function go(side, dir) { const s = state[side]; s.history = s.history.slice(0, s.hi + 1); s.history.push(dir); s.hi = s.history.length - 1; return load(side, dir); }
+    function back(side) { const s = state[side]; if (s.hi > 0) { s.hi--; return load(side, s.history[s.hi]); } }
+    function fwd(side) { const s = state[side]; if (s.hi < s.history.length - 1) { s.hi++; return load(side, s.history[s.hi]); } }
+    function updateNav(side) {
+      const s = state[side];
+      cols[side].querySelector('[data-act=back]').disabled = s.hi <= 0;
+      cols[side].querySelector('[data-act=fwd]').disabled = s.hi >= s.history.length - 1;
+    }
+
+    function renderPath(side, dir) {
+      const c = cols[side].querySelector('[data-crumbs]');
+      c.innerHTML = '';
+      const parts = String(dir || '/').split('/').filter(Boolean);
+      const seg = (label, path, cur) => { const s = h('span', 'fb-crumb' + (cur ? ' cur' : '')); s.textContent = label; if (!cur) s.onclick = () => go(side, path); return s; };
+      c.appendChild(seg(side === 'local' ? '💻' : '🖥', '/', parts.length === 0));
+      let acc = '';
+      parts.forEach((p, i) => { acc += '/' + p; c.appendChild(h('span', 'fb-sep', '/')); c.appendChild(seg(p, acc, i === parts.length - 1)); });
+    }
+
+    function editPath(side) {
+      const c = cols[side].querySelector('[data-crumbs]');
+      const cur = state[side].dir || '/';
+      c.innerHTML = '';
+      const inp = h('input', 'fb-pathinput'); inp.value = cur; inp.spellcheck = false;
+      let done = false;
+      const finish = (nav) => { if (done) return; done = true; if (nav) { const v = inp.value.trim(); if (v) { go(side, v); return; } } renderPath(side, cur); };
+      inp.onkeydown = (e) => { if (e.key === 'Enter') finish(true); else if (e.key === 'Escape') finish(false); };
+      inp.onblur = () => finish(false);
+      c.appendChild(inp);
+      setTimeout(() => { inp.focus(); inp.select(); }, 0);
     }
 
     function renderList(side, entries) {
@@ -88,7 +126,7 @@
           + `<span class="fb-size">${en.isDir ? '' : human(en.size)}</span>`
           + `<span class="fb-acts"><button data-a="ren" title="Rename">✎</button><button data-a="del" title="Delete">✕</button></span>`;
         row.querySelector('.fb-name').textContent = en.name;
-        row.addEventListener('dblclick', () => (en.isDir ? load(side, en.path) : transfer(side, en)));
+        row.addEventListener('dblclick', () => (en.isDir ? go(side, en.path) : transfer(side, en)));
         row.querySelector('[data-a=ren]').addEventListener('click', (ev) => { ev.stopPropagation(); rename(side, en); });
         row.querySelector('[data-a=del]').addEventListener('click', (ev) => { ev.stopPropagation(); del(side, en); });
         if (!en.isDir) row.addEventListener('dragstart', (ev) => ev.dataTransfer.setData('text/fb', JSON.stringify({ side, path: en.path, name: en.name })));
@@ -171,10 +209,10 @@
     return {
       el: root,
       async init() {
-        if (DEMO) { await load('local', demoData.local.dir); await load('remote', demoData.remote.dir); return; }
+        if (DEMO) { await go('local', demoData.local.dir); await go('remote', demoData.remote.dir); return; }
         const home = await api.fm.home(tabId).catch(() => ({ local: '/', remote: null, remoteErr: 'not connected' }));
-        await load('local', home.local || '/');
-        if (home.remote) await load('remote', home.remote);
+        await go('local', home.local || '/');
+        if (home.remote) await go('remote', home.remote);
         else { const le = cols.remote.querySelector('[data-list]'); le.innerHTML = ''; le.appendChild(h('div', 'fb-msg err', esc(home.remoteErr || 'Not connected'))); }
       },
       destroy() { try { unsub && unsub(); } catch { /* */ } root.remove(); },
