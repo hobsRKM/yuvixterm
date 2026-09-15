@@ -1,0 +1,22 @@
+<<<STATS
+cpu  1000 0 500 8000 200 0 50 0 0 0
+cpu0 500 0 250 4000 100 0 25 0 0 0
+intr 12345
+ctxt 67890
+<<<MEM
+MemTotal:        8171400 kB
+MemFree:         2000000 kB
+MemAvailable:    5000000 kB
+Buffers:          100000 kB
+<<<NET
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo:   12345     100    0    0    0     0          0         0    12345     100    0    0    0     0       0          0
+  eth0: 1000000     500    0    0    0     0          0         0   200000     300    0    0    0     0       0          0
+<<<UP
+123456.78 987654.32
+<<<LOAD
+0.15 0.10 0.05 1/234 5678
+<<<DISK
+/dev/sda1 41152736 16000000 23000000 44% /
+STATS>>>

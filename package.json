@@ -1,0 +1,47 @@
+{
+  "name": "mac-ssh-client",
+  "version": "0.1.0",
+  "description": "Minimal MobaXterm-style SSH client for macOS: saved-host sidebar, tabbed terminals, and a live remote resource monitor.",
+  "main": "main/index.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "ssh2": "^1.16.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.yuvim.macssh",
+    "productName": "YuviXterm",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main/**",
+      "preload/**",
+      "renderer/**",
+      "package.json",
+      "!**/*.map",
+      "!**/node_modules/cpu-features/**"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": "universal"
+        }
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "npmRebuild": false
+  }
+}

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' 'unsafe-inline' file:; img-src 'self' data: file:; font-src 'self' data: file:; connect-src 'none'; object-src 'none'; base-uri 'none';" />
+  <title>SSH</title>
+  <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <span>Sessions</span>
+        <button id="add-session" title="New session">＋</button>
+      </div>
+      <div class="search-wrap"><input id="session-search" type="text" placeholder="Search hosts…" autocomplete="off" spellcheck="false" /></div>
+      <div id="session-list"></div>
+    </aside>
+    <section id="workspace">
+      <div id="tabbar"></div>
+      <div id="terminals"></div>
+      <div id="monitor">
+        <div class="stat sg" data-k="cpu"><div class="sh"><span class="sk">CPU</span><span class="sv">—</span></div><canvas class="spark"></canvas></div>
+        <div class="stat sg" data-k="ram"><div class="sh"><span class="sk">RAM</span><span class="sv">—</span></div><canvas class="spark"></canvas></div>
+        <div class="stat sg" data-k="net"><div class="sh"><span class="sk">NET</span><span class="sv">—</span></div><canvas class="spark"></canvas></div>
+        <div class="stat sc" id="mon-disk"><span class="sk">DISK</span><span class="sv">—</span></div>
+        <div class="stat sc" id="mon-load"><span class="sk">LOAD</span><span class="sv">—</span></div>
+        <div class="stat sc" id="mon-up"><span class="sk">UPTIME</span><span class="sv">—</span></div>
+        <div class="conn-chip"><span class="cdot"></span><span class="ch" id="mon-host">—</span><span class="cu" id="mon-user"></span></div>
+      </div>
+    </section>
+  </div>
+  <div id="modal-root"></div>
+
+  <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
+  <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
