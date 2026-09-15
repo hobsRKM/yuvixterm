@@ -4,6 +4,7 @@ const path = require('node:path');
 const { SessionStore } = require('./session-store');
 const { HostKeyVerifier } = require('./host-key-verifier');
 const { ConnectionManager } = require('./connection-manager');
+const { FileManager } = require('./file-manager');
 const { registerIpc } = require('./ipc');
 
 // Keep the app data directory stable ("mac-ssh-client") regardless of the
@@ -94,7 +95,13 @@ app.whenReady().then(() => {
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, payload);
     },
   });
-  registerIpc({ store, connections });
+  const files = new FileManager({
+    getClient: (tabId) => connections.getClient(tabId),
+    emit: (ch, payload) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, payload);
+    },
+  });
+  registerIpc({ store, connections, files });
 
   // One-shot bulk import: MSSH_SEED=<file.json> electron .  (array of {session, secrets})
   // Encrypts secrets via the same safeStorage the app uses, then quits. No window.

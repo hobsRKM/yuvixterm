@@ -18,8 +18,15 @@
       <div id="session-list"></div>
     </aside>
     <section id="workspace">
-      <div id="tabbar"></div>
-      <div id="terminals"></div>
+      <div id="topbar">
+        <div id="tabbar"></div>
+        <button id="files-toggle" title="Toggle file browser (SFTP)">⊞ Files</button>
+      </div>
+      <div id="stage">
+        <div id="terminals"></div>
+        <div id="files-splitter" hidden></div>
+        <div id="files-dock" hidden></div>
+      </div>
       <div id="monitor">
         <div class="stat sg" data-k="cpu"><div class="sh"><span class="sk">CPU</span><span class="sv">—</span></div><canvas class="spark"></canvas></div>
         <div class="stat sg" data-k="ram"><div class="sh"><span class="sk">RAM</span><span class="sv">—</span></div><canvas class="spark"></canvas></div>
@@ -35,6 +42,7 @@
 
   <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
   <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="file-browser.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 {
   "name": "mac-ssh-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Minimal MobaXterm-style SSH client for macOS: saved-host sidebar, tabbed terminals, and a live remote resource monitor.",
   "main": "main/index.js",
   "scripts": {

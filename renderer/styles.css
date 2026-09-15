@@ -124,3 +124,49 @@ button.btn:hover { border-color: var(--fg-faint); }
 button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 button.btn.primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
 button.btn.danger { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* Top bar: tabs + Files toggle */
+#topbar { display: flex; align-items: center; background: var(--bg-elev); border-bottom: 1px solid var(--border-soft); }
+#tabbar { flex: 1; min-width: 0; border-bottom: none; }
+#files-toggle { flex: none; margin: 0 8px; padding: 6px 12px; border: 1px solid var(--border); background: var(--bg-elev2); color: var(--fg-dim); border-radius: 8px; cursor: pointer; font-size: 12.5px; white-space: nowrap; transition: all .12s; }
+#files-toggle:hover { color: var(--fg); border-color: var(--faint); }
+#files-toggle.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+/* Stage: terminal + optional file dock */
+#stage { display: flex; min-height: 0; background: var(--bg); }
+#terminals { flex: 1; min-width: 0; position: relative; }
+#files-splitter { flex: none; width: 6px; cursor: col-resize; background: var(--border-soft); }
+#files-splitter:hover { background: var(--accent); }
+#files-dock { flex: none; width: 500px; min-width: 320px; border-left: 1px solid var(--border); background: var(--bg2); display: flex; overflow: hidden; }
+
+/* File browser (dual pane) */
+.fb-pane { display: none; flex: 1; min-width: 0; flex-direction: column; }
+.fb-pane.active { display: flex; }
+.fb-cols { display: flex; flex: 1; min-height: 0; }
+.fb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--border-soft); }
+.fb-col:last-child { border-right: none; }
+.fb-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--border-soft); }
+.fb-title { font-size: 11px; font-weight: 600; letter-spacing: .03em; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fb-tools { display: flex; gap: 3px; flex: none; }
+.fb-tools button { width: 24px; height: 24px; border: none; border-radius: 6px; background: var(--bg-elev2); color: var(--fg-dim); cursor: pointer; font-size: 13px; }
+.fb-tools button:hover { background: var(--accent); color: #06121f; }
+.fb-path { padding: 5px 10px; font-size: 11px; color: var(--fg-faint); font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-bottom: 1px solid var(--border-soft); }
+.fb-list { flex: 1; overflow: auto; padding: 4px; }
+.fb-list.drop { outline: 2px dashed var(--accent); outline-offset: -4px; border-radius: 6px; }
+.fb-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; font-size: 12.5px; }
+.fb-row:hover { background: var(--bg-elev2); }
+.fb-row.dir { cursor: pointer; }
+.fb-ic { flex: none; font-size: 13px; }
+.fb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fb-size { flex: none; color: var(--fg-faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.fb-acts { flex: none; display: flex; gap: 2px; visibility: hidden; }
+.fb-row:hover .fb-acts { visibility: visible; }
+.fb-acts button { width: 20px; height: 20px; border: none; background: none; color: var(--fg-faint); cursor: pointer; border-radius: 4px; }
+.fb-acts button:hover { color: var(--accent); background: var(--bg); }
+.fb-msg { padding: 12px; color: var(--fg-faint); font-size: 12px; }
+.fb-msg.err { color: var(--red); }
+.fb-status { padding: 6px 10px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--fg-dim); background: var(--bg-elev); min-height: 30px; display: flex; align-items: center; font-variant-numeric: tabular-nums; }
+.fb-ask { display: flex; align-items: center; gap: 6px; width: 100%; }
+.fb-ask input { flex: 1; background: var(--bg-inset); border: 1px solid var(--border); border-radius: 5px; padding: 3px 7px; color: var(--fg); font-size: 12px; outline: none; }
+.fb-ask button { border: 1px solid var(--border); background: var(--bg-elev2); color: var(--fg); border-radius: 5px; padding: 3px 9px; cursor: pointer; font-size: 11.5px; }
+.fb-ask button.p { background: var(--accent); color: #06121f; border-color: var(--accent); font-weight: 600; }

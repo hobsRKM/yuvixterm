@@ -142,7 +142,8 @@
     tabbar.appendChild(tabEl);
 
     tabs.set(tabId, { tabId, session, term, fit, paneEl: pane, tabEl, status: 'connecting',
-      metrics: null, history: { cpu: [], ram: [], rx: [], tx: [] }, _banner: null });
+      metrics: null, history: { cpu: [], ram: [], rx: [], tx: [] }, _banner: null,
+      filesOpen: false, fb: null });
     activateTab(tabId);
   }
 
@@ -164,12 +165,37 @@
     if (!t) return;
     requestAnimationFrame(() => { fitActive(t); t.term.focus(); renderMonitor(t); });
     renderMonitor(t);
+    layoutFiles();
+  }
+
+  // ---------- file browser (SFTP) ----------
+  function toggleFiles() {
+    const t = tabs.get(activeTab);
+    if (!t) return;
+    t.filesOpen = !t.filesOpen;
+    if (t.filesOpen && !t.fb) {
+      t.fb = window.createFileBrowser(t.tabId, t.session);
+      el('files-dock').appendChild(t.fb.el);
+      t.fb.init();
+    }
+    layoutFiles();
+  }
+  function layoutFiles() {
+    const t = tabs.get(activeTab);
+    const dock = el('files-dock'), sp = el('files-splitter'), btn = el('files-toggle');
+    for (const [, tt] of tabs) if (tt.fb) tt.fb.el.classList.remove('active');
+    const open = !!(t && t.filesOpen && t.fb);
+    dock.hidden = !open; sp.hidden = !open;
+    btn.classList.toggle('on', !!(t && t.filesOpen));
+    if (open) t.fb.el.classList.add('active');
+    if (t) requestAnimationFrame(() => fitActive(t));
   }
 
   function closeTab(tabId) {
     const t = tabs.get(tabId);
     if (!t) return;
     window.api.conn.close(tabId);
+    if (t.fb) { try { t.fb.destroy(); } catch { /* */ } }
     try { t.term.dispose(); } catch { /* */ }
     t.paneEl.remove();
     t.tabEl.remove();
@@ -482,7 +508,23 @@
 
   el('add-session').addEventListener('click', () => openEditor(null));
   el('session-search').addEventListener('input', (e) => { sessionFilter = e.target.value; renderSidebar(); });
+  el('files-toggle').addEventListener('click', toggleFiles);
   window.addEventListener('resize', () => { const t = tabs.get(activeTab); if (t) fitActive(t); });
+
+  // resizable files dock
+  (() => {
+    const sp = el('files-splitter'), dock = el('files-dock'), stage = el('stage');
+    let dragging = false;
+    sp.addEventListener('mousedown', (e) => { dragging = true; document.body.style.cursor = 'col-resize'; e.preventDefault(); });
+    window.addEventListener('mouseup', () => { dragging = false; document.body.style.cursor = ''; });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const r = stage.getBoundingClientRect();
+      const w = Math.max(320, Math.min(r.width * 0.72, r.right - e.clientX));
+      dock.style.width = w + 'px';
+      const t = tabs.get(activeTab); if (t) fitActive(t);
+    });
+  })();
 
   // Preview mode (screenshots/design only): launched with ?demo=1. No effect on normal use.
   if (location.search.includes('demo')) {

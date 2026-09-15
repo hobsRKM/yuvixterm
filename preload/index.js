@@ -27,11 +27,25 @@ contextBridge.exposeInMainWorld('api', {
   dialog: {
     pickKey: (current) => invoke('dialog:pickKey', { current }),
   },
+  fm: {
+    home: (tabId) => invoke('fm:home', { tabId }),
+    localList: (p) => invoke('fm:localList', { path: p }),
+    localMkdir: (dir, name) => invoke('fm:localMkdir', { dir, name }),
+    localRename: (from, to) => invoke('fm:localRename', { from, to }),
+    localDelete: (p) => invoke('fm:localDelete', { path: p }),
+    remoteList: (tabId, p) => invoke('fm:remoteList', { tabId, path: p }),
+    remoteMkdir: (tabId, dir, name) => invoke('fm:remoteMkdir', { tabId, dir, name }),
+    remoteRename: (tabId, from, to) => invoke('fm:remoteRename', { tabId, from, to }),
+    remoteDelete: (tabId, p) => invoke('fm:remoteDelete', { tabId, path: p }),
+    download: (tabId, remotePath, localPath) => invoke('fm:download', { tabId, remotePath, localPath }),
+    upload: (tabId, localPath, remotePath) => invoke('fm:upload', { tabId, localPath, remotePath }),
+  },
   on: {
     termData: (cb) => sub('term:data', cb),
     status: (cb) => sub('conn:status', cb),
     needPassword: (cb) => sub('conn:needPassword', cb),
     hostkey: (cb) => sub('conn:hostkey', cb),
     stats: (cb) => sub('stats:update', cb),
+    fmProgress: (cb) => sub('fm:progress', cb),
   },
 });

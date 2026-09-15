@@ -3,7 +3,7 @@
   YuviXterm — marketing site.  PLACEHOLDERS to swap before / after launch:
    • Domain:   https://yuvixterm.app   — find-replace "yuvixterm.app" across *.{html,xml,txt}
                 (fixes canonical, OG, Twitter, sitemap, robots, JSON-LD url)
-   • Download: https://github.com/hobsRKM/yuvixterm/releases/latest   — replace hobsRKM/yuvixterm with your
+   • Download: https://github.com/OWNER/REPO/releases/latest   — replace OWNER/REPO with your
                 GitHub repo (the #download button href + JSON-LD downloadUrl)
 -->
 <html lang="en">
@@ -47,7 +47,7 @@
     "operatingSystem": "macOS 11+",
     "description": "A fast, native macOS SSH client with a saved-host sidebar, tabbed terminals, and a live server resource monitor. A free MobaXterm alternative for Mac.",
     "url": "https://yuvixterm.app/",
-    "downloadUrl": "https://github.com/hobsRKM/yuvixterm/releases/latest",
+    "downloadUrl": "https://github.com/OWNER/REPO/releases/latest",
     "softwareVersion": "0.1.0",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "publisher": { "@type": "Organization", "name": "YuviXterm" }
@@ -95,7 +95,7 @@
       <div class="wrap">
         <p class="eyebrow">The MobaXterm alternative for Mac</p>
         <h1>The modern SSH client<br />for macOS.</h1>
-        <p class="lede">A fast, native Mac app with a saved-host sidebar, tabbed terminals, and a <strong>live resource monitor</strong> of every server you connect to — CPU, memory, network, disk, load and uptime, graphed in real time.</p>
+        <p class="lede">A fast, native Mac app with a saved-host sidebar, tabbed terminals, and a <strong>live resource monitor</strong> of every server you connect to — CPU, memory, network, disk, load and uptime, graphed in real time. Plus a built-in dual-pane SFTP file browser.</p>
         <div class="cta">
           <a class="btn btn-lg" href="#download">Download for macOS</a>
           <a class="btn btn-lg btn-ghost" href="#features">See what's inside</a>
@@ -144,6 +144,22 @@
             <h3>Trust-on-first-use keys</h3>
             <p>Clear prompts when a host is new — and a loud, explicit re-trust prompt if a key ever changes.</p>
           </article>
+          <article class="card">
+            <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="8" height="14" rx="1.5"/><rect x="13" y="5" width="8" height="14" rx="1.5"/><path d="M8.5 12h4M11 10l2 2-2 2"/></svg></span>
+            <h3>Dual-pane file browser</h3>
+            <p>Move files between your Mac and the server over SFTP on the same connection — drag or double-click, with a live transfer bar.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="wrap">
+        <h2>Move files without leaving the app.</h2>
+        <p class="section-sub">A dual-pane SFTP browser rides the connection you're already on — no second login, no separate app. Drag between your Mac and the server, or double-click to send.</p>
+        <div class="window" style="margin-top:34px">
+          <div class="titlebar"><span class="tl r"></span><span class="tl y"></span><span class="tl g"></span></div>
+          <img src="/assets/filemanager.png" width="2200" height="1384" alt="YuviXterm dual-pane SFTP file browser: local Mac files beside remote server files with drag-to-transfer" loading="lazy" />
         </div>
       </div>
     </section>
@@ -175,8 +191,8 @@
       <div class="wrap center">
         <h2>Download YuviXterm for macOS</h2>
         <p class="section-sub">Free. Takes about ten seconds to set up your first server.</p>
-        <!-- TODO: replace hobsRKM/yuvixterm with your GitHub repo (points at the latest release's assets) -->
-        <a class="btn btn-lg" href="https://github.com/hobsRKM/yuvixterm/releases/latest">Download YuviXterm 0.1.0</a>
+        <!-- TODO: replace OWNER/REPO with your GitHub repo (points at the latest release's assets) -->
+        <a class="btn btn-lg" href="https://github.com/OWNER/REPO/releases/latest">Download YuviXterm 0.1.0</a>
         <p class="cta-note">macOS 11 Big Sur or later · Apple Silicon &amp; Intel</p>
         <p class="firstrun">First launch: because the build is independently distributed, right-click the app and choose <strong>Open → Open</strong>. macOS remembers it after that.</p>
       </div>
@@ -190,7 +206,7 @@
         <details><summary>Does it run on Apple Silicon?</summary><p>Yes — Apple Silicon (M-series) and Intel Macs, macOS 11 Big Sur or later.</p></details>
         <details><summary>Where are my passwords stored?</summary><p>Encrypted with the macOS Keychain (via Electron's safeStorage) and never written to disk in plaintext. SSH keys, key passphrases and the ssh-agent are supported too.</p></details>
         <details><summary>macOS says it can't verify the developer — how do I open it?</summary><p>On first launch, right-click the app in Finder and choose <strong>Open</strong>, then <strong>Open</strong> again. macOS remembers the choice from then on.</p></details>
-        <details><summary>Does it do SFTP, X11 or port forwarding?</summary><p>Not yet — YuviXterm is focused on SSH terminals plus the live monitor. File transfer and tunnels are on the roadmap.</p></details>
+        <details><summary>Can I transfer files (SFTP)?</summary><p>Yes — a dual-pane SFTP file browser is built in. Open it with the <strong>Files</strong> button and move files between your Mac and the server (drag or double-click) over the same connection. X11 and port forwarding aren't included yet.</p></details>
       </div>
     </section>
   </main>

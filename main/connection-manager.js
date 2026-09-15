@@ -204,6 +204,12 @@ class ConnectionManager {
     this.conns.delete(tabId);
   }
 
+  // The live ssh2 client for a tab, only once it's connected (for SFTP).
+  getClient(tabId) {
+    const entry = this.conns.get(tabId);
+    return entry && entry.connected ? entry.client : null;
+  }
+
   closeAll() { for (const id of [...this.conns.keys()]) this.close(id); }
 }
 
