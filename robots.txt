@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hobsrkm.github.io/yuvixterm/sitemap.xml
