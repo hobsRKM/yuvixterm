@@ -13,7 +13,7 @@ Saved-host sidebar · tabbed terminals · a live server resource monitor.
 ![Price](https://img.shields.io/badge/price-free-3fb950)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 
-### [⬇ Download for macOS](https://github.com/OWNER/REPO/releases/latest)
+### [⬇ Download for macOS](https://github.com/hobsRKM/yuvixterm/releases/latest)
 
 ![YuviXterm screenshot](docs/screenshot.png)
 
@@ -36,14 +36,14 @@ MobaXterm never came to the Mac. **YuviXterm** brings the parts Mac users miss m
 
 ## Download
 
-Grab the latest **universal** `.dmg` (Apple Silicon + Intel) from the **[Releases](https://github.com/OWNER/REPO/releases/latest)** page. Requires macOS 11 Big Sur or later.
+Grab the latest **universal** `.dmg` (Apple Silicon + Intel) from the **[Releases](https://github.com/hobsRKM/yuvixterm/releases/latest)** page. Requires macOS 11 Big Sur or later.
 
 > **First launch:** the build is independently distributed (unsigned), so right-click the app in Finder -> **Open** -> **Open**. macOS remembers it afterward.
 
 ## Build from source
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
+git clone https://github.com/hobsRKM/yuvixterm.git
 cd REPO
 npm install
 npm start        # run in dev
