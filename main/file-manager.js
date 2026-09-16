@@ -4,6 +4,9 @@ const os = require('node:os');
 const nodePath = require('node:path');
 const { posixJoin, sortEntries } = require('./fm-util');
 
+// Windows-only: "C:\Users\me" -> "C:/Users/me" (a no-op elsewhere).
+const fwd = (p) => (process.platform === 'win32' ? p.replace(/\\/g, '/') : p);
+
 // Local filesystem + per-tab SFTP file operations for the file browser.
 // SFTP rides the tab's existing ssh2 client (getClient(tabId)).
 class FileManager {
@@ -15,7 +18,10 @@ class FileManager {
   }
 
   // ---------------- local ----------------
-  localHome() { return os.homedir(); }
+  // Local paths cross to the renderer with forward slashes even on Windows
+  // ("C:/Users/me"): the renderer's crumb/parent logic is slash-based, and
+  // Windows accepts either separator.
+  localHome() { return fwd(os.homedir()); }
 
   localList(dir) {
     const out = [];
@@ -26,11 +32,11 @@ class FileManager {
         const st = fs.statSync(full);       // follow symlinks
         isDir = st.isDirectory(); size = st.size; mtime = st.mtimeMs;
       } catch { /* broken symlink / no perms: keep dirent info */ }
-      out.push({ name: de.name, path: full, isDir, size, mtime });
+      out.push({ name: de.name, path: fwd(full), isDir, size, mtime });
     }
     return sortEntries(out);
   }
-  localMkdir(dir, name) { fs.mkdirSync(nodePath.join(dir, name)); return nodePath.join(dir, name); }
+  localMkdir(dir, name) { const p = nodePath.join(dir, name); fs.mkdirSync(p); return fwd(p); }
   localRename(from, to) { fs.renameSync(from, to); }
   localDelete(p) { fs.rmSync(p, { recursive: true, force: false }); }
 

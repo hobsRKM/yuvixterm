@@ -7,9 +7,20 @@
   const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const human = (n) => { if (n == null) return ''; const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0, v = n; while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; } return (v >= 100 || i === 0 ? v.toFixed(0) : v.toFixed(1)) + u[i]; };
-  // POSIX joins work for macOS local paths too.
+  // Paths are always forward-slash, including local Windows ones ("C:/Users/me"):
+  // main normalizes them, and Windows accepts forward slashes everywhere.
+  const isDrive = (p) => /^[A-Za-z]:$/.test(p);
   const pjoin = (base, name) => { const b = (base || '/').replace(/\/+$/, ''); return (b === '/' ? '' : b) + '/' + name; };
-  const pup = (p) => { if (!p || p === '/') return '/'; const t = p.replace(/\/+$/, ''); const i = t.lastIndexOf('/'); return i <= 0 ? '/' : t.slice(0, i); };
+  const pup = (p) => {
+    if (!p || p === '/') return '/';
+    const t = p.replace(/\/+$/, '');
+    if (isDrive(t)) return t + '/';                       // drive root stays put
+    const i = t.lastIndexOf('/');
+    const parent = i < 0 ? '' : t.slice(0, i);
+    return parent === '' ? '/' : isDrive(parent) ? parent + '/' : parent;
+  };
+  // A typed/pasted Windows path ("C:\\Users\\me") -> forward slashes.
+  const normLocal = (p) => (/^[A-Za-z]:|^\\\\/.test(p) ? p.replace(/\\/g, '/') : p);
 
   // Screenshot/design mode only (?demo): canned listings, never touches the real fs/sftp.
   const DEMO = typeof location !== 'undefined' && location.search.includes('demo');
@@ -19,12 +30,15 @@
   };
   const demoList = (side) => demoData[side].rows.map(([name, d, size]) => ({ name, isDir: !!d, size, path: pjoin(demoData[side].dir, name), mtime: 0 }));
 
+  // Local pane title, in the OS's own words.
+  const LOCAL_TITLE = /Mac/i.test(navigator.platform) ? 'This Mac' : /Win/i.test(navigator.platform) ? 'This PC' : 'Local';
+
   window.createFileBrowser = function (tabId, session) {
     const state = { local: { dir: null, entries: [], history: [], hi: -1 }, remote: { dir: null, entries: [], history: [], hi: -1 } };
     const root = h('div', 'fb-pane');
     root.innerHTML = `
       <div class="fb-cols">
-        ${col('local', 'This Mac')}
+        ${col('local', LOCAL_TITLE)}
         ${col('remote', esc(session && (session.name || session.host) || 'Remote'))}
       </div>
       <div class="fb-status" data-status>Ready</div>`;
@@ -67,6 +81,7 @@
       : side === 'local' ? api.fm.localList(dir) : api.fm.remoteList(tabId, dir));
 
     async function load(side, dir) {
+      if (side === 'local') dir = normLocal(dir);
       state[side].dir = dir;
       renderPath(side, dir);
       updateNav(side);
@@ -96,9 +111,13 @@
       const c = cols[side].querySelector('[data-crumbs]');
       c.innerHTML = '';
       const parts = String(dir || '/').split('/').filter(Boolean);
+      // On Windows the drive ("C:") is the root of the local pane.
+      const drive = isDrive(parts[0] || '') ? parts.shift() : null;
+      const rootPath = drive ? drive + '/' : '/';
       const seg = (label, path, cur) => { const s = h('span', 'fb-crumb' + (cur ? ' cur' : '')); s.textContent = label; if (!cur) s.onclick = () => go(side, path); return s; };
-      c.appendChild(seg(side === 'local' ? '💻' : '🖥', '/', parts.length === 0));
-      let acc = '';
+      c.appendChild(seg(side === 'local' ? '💻' : '🖥', rootPath, !drive && parts.length === 0));
+      if (drive) { c.appendChild(h('span', 'fb-sep', '/')); c.appendChild(seg(drive, rootPath, parts.length === 0)); }
+      let acc = drive || '';
       parts.forEach((p, i) => { acc += '/' + p; c.appendChild(h('span', 'fb-sep', '/')); c.appendChild(seg(p, acc, i === parts.length - 1)); });
     }
 
