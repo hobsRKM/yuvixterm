@@ -518,7 +518,10 @@
       };
       if (s.fill) {
         const g = ctx.createLinearGradient(0, 0, 0, hg);
-        g.addColorStop(0, s.fill); g.addColorStop(1, 'rgba(0,0,0,0)');
+        // s.fill may be [top, bottom] for a bold filled area, or a single
+        // colour that fades to transparent (legacy).
+        if (Array.isArray(s.fill)) { g.addColorStop(0, s.fill[0]); g.addColorStop(1, s.fill[1]); }
+        else { g.addColorStop(0, s.fill); g.addColorStop(1, 'rgba(0,0,0,0)'); }
         ctx.beginPath(); trace();
         ctx.lineTo(pts[pts.length - 1][0], hg); ctx.lineTo(pts[0][0], hg); ctx.closePath();
         ctx.fillStyle = g; ctx.fill();
@@ -561,9 +564,12 @@
   function renderMonitor(t) {
     if (!t) return clearMonitor();
     const m = t.metrics, h = t.history, s = t.session || {};
-    drawSpark(gCanvas('cpu'), [{ data: h.cpu, color: '#58a6ff', fill: 'rgba(88,166,255,0.45)' }], 100);
-    drawSpark(gCanvas('ram'), [{ data: h.ram, color: '#3fb950', fill: 'rgba(63,185,80,0.40)' }], 100);
-    drawSpark(gCanvas('net'), [{ data: h.rx, color: '#56d4dd', fill: 'rgba(86,212,221,0.28)' }, { data: h.tx, color: '#bc8cff' }], Math.max(1024, ...h.rx, ...h.tx));
+    drawSpark(gCanvas('cpu'), [{ data: h.cpu, color: '#58a6ff', fill: ['rgba(88,166,255,0.60)', 'rgba(88,166,255,0.06)'] }], 100);
+    drawSpark(gCanvas('ram'), [{ data: h.ram, color: '#3fb950', fill: ['rgba(63,185,80,0.55)', 'rgba(63,185,80,0.06)'] }], 100);
+    drawSpark(gCanvas('net'), [
+      { data: h.rx, color: '#56d4dd', fill: ['rgba(86,212,221,0.45)', 'rgba(86,212,221,0.05)'] },
+      { data: h.tx, color: '#bc8cff', fill: ['rgba(188,140,255,0.30)', 'rgba(188,140,255,0.04)'] },
+    ], Math.max(1024, ...h.rx, ...h.tx));
     setV('cpu', m && m.cpuPct != null ? Math.round(m.cpuPct) + '%' : '—');
     setV('ram', m && m.memTotal ? humanMem(m.memUsed, m.memTotal) : '—');
     setV('net', m && m.netRxRate != null ? fmtNet(m.netRxRate, m.netTxRate) : '—');
