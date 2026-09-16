@@ -1,18 +1,19 @@
 <!doctype html>
 <!--
-  YuviXterm — marketing site.  PLACEHOLDERS to swap before / after launch:
+  YuviXterm — marketing site.
    • Domain:   https://yuvixterm.app   — find-replace "yuvixterm.app" across *.{html,xml,txt}
                 (fixes canonical, OG, Twitter, sitemap, robots, JSON-LD url)
-   • Download: https://github.com/OWNER/REPO/releases/latest   — replace OWNER/REPO with your
-                GitHub repo (the #download button href + JSON-LD downloadUrl)
+   • Download: the #download buttons link to the latest GitHub release; a small script at the
+                bottom upgrades each one to the newest release asset for its platform (.dmg / Setup .exe),
+                so the buttons stay correct even when the macOS and Windows builds ship separately.
 -->
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>YuviXterm — Modern SSH Client for macOS · MobaXterm Alternative</title>
-  <meta name="description" content="YuviXterm is a fast, native macOS SSH client with a saved-host sidebar, tabbed terminals, and a live server resource monitor. A free MobaXterm alternative for Mac." />
-  <meta name="keywords" content="SSH client Mac, MobaXterm alternative Mac, macOS SSH client, terminal, server monitor, SSH GUI macOS, tabbed SSH, Apple Silicon SSH client" />
+  <title>YuviXterm — Modern SSH Client for macOS &amp; Windows · MobaXterm Alternative</title>
+  <meta name="description" content="YuviXterm is a fast, native SSH client for macOS and Windows with a saved-host sidebar, tabbed terminals, a live server resource monitor, and a dual-pane SFTP file browser. A free MobaXterm alternative." />
+  <meta name="keywords" content="SSH client Mac, SSH client Windows, MobaXterm alternative, MobaXterm alternative Mac, macOS SSH client, Windows SSH client, terminal, server monitor, SSH GUI, tabbed SSH, SFTP browser, Apple Silicon SSH client" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#0d1117" />
   <link rel="canonical" href="https://hobsrkm.github.io/yuvixterm/" />
@@ -20,8 +21,8 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="YuviXterm" />
-  <meta property="og:title" content="YuviXterm — Modern SSH Client for macOS" />
-  <meta property="og:description" content="A fast, native Mac SSH client with a saved-host sidebar, tabbed terminals, and a live server resource monitor. Free MobaXterm alternative for Mac." />
+  <meta property="og:title" content="YuviXterm — Modern SSH Client for macOS &amp; Windows" />
+  <meta property="og:description" content="A fast, native SSH client for Mac and Windows with a saved-host sidebar, tabbed terminals, and a live server resource monitor. Free MobaXterm alternative." />
   <meta property="og:url" content="https://hobsrkm.github.io/yuvixterm/" />
   <meta property="og:image" content="https://hobsrkm.github.io/yuvixterm/assets/og.png" />
   <meta property="og:image:width" content="1200" />
@@ -29,8 +30,8 @@
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="YuviXterm — Modern SSH Client for macOS" />
-  <meta name="twitter:description" content="A fast, native Mac SSH client with tabbed terminals and a live server resource monitor. Free MobaXterm alternative for Mac." />
+  <meta name="twitter:title" content="YuviXterm — Modern SSH Client for macOS &amp; Windows" />
+  <meta name="twitter:description" content="A fast, native SSH client for Mac and Windows with tabbed terminals and a live server resource monitor. Free MobaXterm alternative." />
   <meta name="twitter:image" content="https://hobsrkm.github.io/yuvixterm/assets/og.png" />
 
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
@@ -44,11 +45,11 @@
     "@type": "SoftwareApplication",
     "name": "YuviXterm",
     "applicationCategory": "DeveloperApplication",
-    "operatingSystem": "macOS 11+",
-    "description": "A fast, native macOS SSH client with a saved-host sidebar, tabbed terminals, and a live server resource monitor. A free MobaXterm alternative for Mac.",
+    "operatingSystem": "macOS 11+, Windows 10+",
+    "description": "A fast, native SSH client for macOS and Windows with a saved-host sidebar, tabbed terminals, a live server resource monitor, and a dual-pane SFTP file browser. A free MobaXterm alternative.",
     "url": "https://hobsrkm.github.io/yuvixterm/",
-    "downloadUrl": "https://github.com/OWNER/REPO/releases/latest",
-    "softwareVersion": "0.1.0",
+    "downloadUrl": "https://github.com/hobsRKM/yuvixterm/releases/latest",
+    "softwareVersion": "0.2.3",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "publisher": { "@type": "Organization", "name": "YuviXterm" }
   }
@@ -59,15 +60,19 @@
     "@type": "FAQPage",
     "mainEntity": [
       { "@type": "Question", "name": "Is YuviXterm a MobaXterm alternative for Mac?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Yes. MobaXterm is Windows-only. YuviXterm brings the parts Mac users miss most — a saved-host sidebar, tabbed SSH terminals, and a live remote resource monitor — to a native macOS app." } },
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. MobaXterm is Windows-only. YuviXterm brings the parts Mac users miss most — a saved-host sidebar, tabbed SSH terminals, and a live remote resource monitor — to a native macOS app, and the same app now runs on Windows too." } },
+      { "@type": "Question", "name": "Does YuviXterm run on Windows?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes — Windows 10 and 11 (64-bit). Download the installer (per-user, no admin rights needed) or the portable .exe. Saved logins are encrypted with Windows DPAPI." } },
       { "@type": "Question", "name": "Is YuviXterm free?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Yes, YuviXterm is free to download and use on macOS." } },
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes, YuviXterm is free to download and use on macOS and Windows. No account, no subscription." } },
       { "@type": "Question", "name": "Does YuviXterm run on Apple Silicon?",
         "acceptedAnswer": { "@type": "Answer", "text": "Yes — YuviXterm runs on Apple Silicon (M-series) and Intel Macs, macOS 11 Big Sur or later." } },
       { "@type": "Question", "name": "Where are my passwords stored?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Passwords are encrypted with the macOS Keychain (Electron safeStorage) and never written to disk in plaintext. SSH keys and the ssh-agent are also supported." } },
+        "acceptedAnswer": { "@type": "Answer", "text": "Passwords are encrypted with the operating system's secure storage — the macOS Keychain or Windows DPAPI (Electron safeStorage) — and never written to disk in plaintext. SSH keys and the ssh-agent are also supported." } },
       { "@type": "Question", "name": "macOS says it cannot verify the developer. How do I open it?",
-        "acceptedAnswer": { "@type": "Answer", "text": "On first launch, right-click the app and choose Open, then Open again. macOS remembers the choice afterward." } }
+        "acceptedAnswer": { "@type": "Answer", "text": "On first launch, right-click the app and choose Open, then Open again. macOS remembers the choice afterward." } },
+      { "@type": "Question", "name": "Windows SmartScreen says the app is unrecognized. How do I run it?",
+        "acceptedAnswer": { "@type": "Answer", "text": "The build is unsigned, so SmartScreen may show \"Windows protected your PC\" the first time. Click More info, then Run anyway." } }
     ]
   }
   </script>
@@ -93,18 +98,19 @@
   <main>
     <section class="hero">
       <div class="wrap">
-        <p class="eyebrow">The MobaXterm alternative for Mac</p>
-        <h1>The modern SSH client<br />for macOS.</h1>
-        <p class="lede">A fast, native Mac app with a saved-host sidebar, tabbed terminals, and a <strong>live resource monitor</strong> of every server you connect to — CPU, memory, network, disk, load and uptime, graphed in real time. Plus a built-in dual-pane SFTP file browser.</p>
+        <p class="eyebrow">The MobaXterm alternative for Mac &amp; Windows</p>
+        <h1>The modern SSH client<br />for macOS and Windows.</h1>
+        <p class="lede">A fast, native desktop app with a saved-host sidebar, tabbed terminals, and a <strong>live resource monitor</strong> of every server you connect to — CPU, memory, network, disk, load and uptime, graphed in real time. Plus a built-in dual-pane SFTP file browser.</p>
         <div class="cta">
-          <a class="btn btn-lg" href="#download">Download for macOS</a>
+          <a class="btn btn-lg" href="#download" data-os="mac">Download for macOS</a>
+          <a class="btn btn-lg btn-ghost" href="#download" data-os="win">Download for Windows</a>
           <a class="btn btn-lg btn-ghost" href="#features">See what's inside</a>
         </div>
-        <p class="cta-note">Free · macOS 11+ · Apple Silicon &amp; Intel</p>
+        <p class="cta-note">Free · macOS 11+ (Apple Silicon &amp; Intel) · Windows 10 / 11</p>
 
         <div class="window" role="img" aria-label="YuviXterm showing a sidebar of saved servers, a terminal tab, and a live resource-monitor bar">
           <div class="titlebar"><span class="tl r"></span><span class="tl y"></span><span class="tl g"></span></div>
-          <img src="assets/screenshot.png" width="2200" height="1384" alt="YuviXterm macOS SSH client — grouped server sidebar, tabbed terminal, and a live CPU/RAM/network resource monitor with graphs" loading="eager" />
+          <img src="assets/screenshot.png" width="2200" height="1384" alt="YuviXterm SSH client — grouped server sidebar, tabbed terminal, and a live CPU/RAM/network resource monitor with graphs" loading="eager" />
         </div>
       </div>
     </section>
@@ -137,7 +143,7 @@
           <article class="card">
             <span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
             <h3>Encrypted credentials</h3>
-            <p>Passwords are sealed in the macOS Keychain — never plaintext. Keys, passphrases and ssh-agent all work.</p>
+            <p>Passwords are sealed in the OS's secure storage — macOS Keychain or Windows DPAPI — never plaintext. Keys, passphrases and ssh-agent all work.</p>
           </article>
           <article class="card">
             <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg></span>
@@ -152,7 +158,7 @@
           <article class="card">
             <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="8" height="14" rx="1.5"/><rect x="13" y="5" width="8" height="14" rx="1.5"/><path d="M8.5 12h4M11 10l2 2-2 2"/></svg></span>
             <h3>Dual-pane file browser</h3>
-            <p>Move files between your Mac and the server over SFTP on the same connection — drag or double-click, with a live transfer bar.</p>
+            <p>Move files between your machine and the server over SFTP on the same connection — drag or double-click, with a live transfer bar.</p>
           </article>
         </div>
       </div>
@@ -161,10 +167,10 @@
     <section class="section alt">
       <div class="wrap">
         <h2>Move files without leaving the app.</h2>
-        <p class="section-sub">A dual-pane SFTP browser rides the connection you're already on — no second login, no separate app. Drag between your Mac and the server, or double-click to send.</p>
+        <p class="section-sub">A dual-pane SFTP browser rides the connection you're already on — no second login, no separate app. Drag between your machine and the server, or double-click to send.</p>
         <div class="window" style="margin-top:34px">
           <div class="titlebar"><span class="tl r"></span><span class="tl y"></span><span class="tl g"></span></div>
-          <img src="assets/filemanager.png" width="2200" height="1384" alt="YuviXterm dual-pane SFTP file browser: local Mac files beside remote server files with drag-to-transfer" loading="lazy" />
+          <img src="assets/filemanager.png" width="2200" height="1384" alt="YuviXterm dual-pane SFTP file browser: local files beside remote server files with drag-to-transfer" loading="lazy" />
         </div>
       </div>
     </section>
@@ -174,44 +180,59 @@
         <div>
           <h2>Built for people who live in the terminal.</h2>
           <p>MobaXterm never came to the Mac. Native terminals are great for one box — but managing a fleet means a wall of tabs and no idea what each server is actually doing.</p>
-          <p>YuviXterm gives you the session manager <em>and</em> the telemetry: click a host, get a tab, and watch its CPU and traffic in the same window. That's it. No SFTP tax, no account, no monthly fee.</p>
+          <p>YuviXterm gives you the session manager <em>and</em> the telemetry: click a host, get a tab, and watch its CPU and traffic in the same window. That's it. No SFTP tax, no account, no monthly fee — on your Mac or your Windows PC.</p>
           <ul class="check">
-            <li>Native macOS app — not a web wrapper you leave open in a browser tab.</li>
+            <li>Native desktop app for macOS and Windows — not a web wrapper you leave open in a browser tab.</li>
             <li>A real resource monitor, reading <code>/proc</code> over the same connection.</li>
-            <li>Free and offline-first — your hosts and secrets never leave your Mac.</li>
+            <li>Free and offline-first — your hosts and secrets never leave your machine.</li>
           </ul>
         </div>
         <div class="compare">
-          <div class="crow crow-head"><span>Capability</span><span>YuviXterm</span><span>Terminal.app</span></div>
+          <div class="crow crow-head"><span>Capability</span><span>YuviXterm</span><span>Stock terminal</span></div>
           <div class="crow"><span>Saved-host sidebar</span><span class="yes">✓</span><span class="no">—</span></div>
           <div class="crow"><span>Tabbed SSH sessions</span><span class="yes">✓</span><span class="mid">~</span></div>
           <div class="crow"><span>Live server monitor</span><span class="yes">✓</span><span class="no">—</span></div>
-          <div class="crow"><span>Keychain-encrypted logins</span><span class="yes">✓</span><span class="no">—</span></div>
-          <div class="crow"><span>Native Mac · free</span><span class="yes">✓</span><span class="yes">✓</span></div>
+          <div class="crow"><span>Encrypted saved logins</span><span class="yes">✓</span><span class="no">—</span></div>
+          <div class="crow"><span>Native app · free</span><span class="yes">✓</span><span class="yes">✓</span></div>
         </div>
       </div>
     </section>
 
     <section id="download" class="section download">
       <div class="wrap center">
-        <h2>Download YuviXterm for macOS</h2>
-        <p class="section-sub">Free. Takes about ten seconds to set up your first server.</p>
-        <!-- TODO: replace OWNER/REPO with your GitHub repo (points at the latest release's assets) -->
-        <a class="btn btn-lg" href="https://github.com/OWNER/REPO/releases/latest">Download YuviXterm 0.1.0</a>
-        <p class="cta-note">macOS 11 Big Sur or later · Apple Silicon &amp; Intel</p>
-        <p class="firstrun">First launch: because the build is independently distributed, right-click the app and choose <strong>Open → Open</strong>. macOS remembers it after that.</p>
+        <h2>Download YuviXterm</h2>
+        <p class="section-sub">Free, for macOS and Windows. Takes about ten seconds to set up your first server.</p>
+        <div class="dl-grid">
+          <article class="dl-card">
+            <h3>macOS</h3>
+            <p class="dl-meta">macOS 11+ · Universal <code>.dmg</code> (Apple Silicon &amp; Intel)</p>
+            <a class="btn btn-lg" href="https://github.com/hobsRKM/yuvixterm/releases/latest" data-dl="mac">Download for macOS</a>
+            <p class="dl-ver" data-dl-ver="mac"></p>
+            <p class="firstrun">First launch: because the build is independently distributed, right-click the app and choose <strong>Open → Open</strong>. macOS remembers it after that.</p>
+          </article>
+          <article class="dl-card">
+            <h3>Windows</h3>
+            <p class="dl-meta">Windows 10 / 11 · 64-bit · installer (no admin needed) or <a href="https://github.com/hobsRKM/yuvixterm/releases/latest" data-dl="win-portable">portable <code>.exe</code></a></p>
+            <a class="btn btn-lg" href="https://github.com/hobsRKM/yuvixterm/releases/latest" data-dl="win">Download for Windows</a>
+            <p class="dl-ver" data-dl-ver="win"></p>
+            <p class="firstrun">First launch: the build is unsigned, so SmartScreen may show "Windows protected your PC" — click <strong>More info → Run anyway</strong>.</p>
+          </article>
+        </div>
+        <p class="cta-note">All builds and release notes on <a href="https://github.com/hobsRKM/yuvixterm/releases">GitHub Releases</a> · open source, MIT-licensed</p>
       </div>
     </section>
 
     <section id="faq" class="section alt">
       <div class="wrap narrow">
         <h2>Frequently asked</h2>
-        <details><summary>Is YuviXterm a MobaXterm alternative for Mac?</summary><p>Yes. MobaXterm is Windows-only. YuviXterm brings the parts Mac users miss most — a saved-host sidebar, tabbed SSH terminals, and a live remote resource monitor — to a native macOS app.</p></details>
-        <details><summary>Is it really free?</summary><p>Yes, YuviXterm is free to download and use. No account, no subscription.</p></details>
+        <details><summary>Is YuviXterm a MobaXterm alternative for Mac?</summary><p>Yes. MobaXterm is Windows-only. YuviXterm brings the parts Mac users miss most — a saved-host sidebar, tabbed SSH terminals, and a live remote resource monitor — to a native macOS app, and the same app now runs on Windows too.</p></details>
+        <details><summary>Does it run on Windows?</summary><p>Yes — Windows 10 and 11 (64-bit). Download the installer (per-user, no admin rights needed) or the portable <code>.exe</code>. Saved logins are encrypted with Windows DPAPI.</p></details>
+        <details><summary>Is it really free?</summary><p>Yes, YuviXterm is free to download and use on macOS and Windows. No account, no subscription.</p></details>
         <details><summary>Does it run on Apple Silicon?</summary><p>Yes — Apple Silicon (M-series) and Intel Macs, macOS 11 Big Sur or later.</p></details>
-        <details><summary>Where are my passwords stored?</summary><p>Encrypted with the macOS Keychain (via Electron's safeStorage) and never written to disk in plaintext. SSH keys, key passphrases and the ssh-agent are supported too.</p></details>
+        <details><summary>Where are my passwords stored?</summary><p>Encrypted with the operating system's secure storage — the macOS Keychain or Windows DPAPI (via Electron's safeStorage) — and never written to disk in plaintext. SSH keys, key passphrases and the ssh-agent are supported too.</p></details>
         <details><summary>macOS says it can't verify the developer — how do I open it?</summary><p>On first launch, right-click the app in Finder and choose <strong>Open</strong>, then <strong>Open</strong> again. macOS remembers the choice from then on.</p></details>
-        <details><summary>Can I transfer files (SFTP)?</summary><p>Yes — a dual-pane SFTP file browser is built in. Open it with the <strong>Files</strong> button and move files between your Mac and the server (drag or double-click) over the same connection. X11 and port forwarding aren't included yet.</p></details>
+        <details><summary>Windows SmartScreen says the app is unrecognized — how do I run it?</summary><p>The build is unsigned, so SmartScreen may show "Windows protected your PC" the first time. Click <strong>More info</strong>, then <strong>Run anyway</strong>.</p></details>
+        <details><summary>Can I transfer files (SFTP)?</summary><p>Yes — a dual-pane SFTP file browser is built in. Open it with the <strong>Files</strong> button and move files between your computer and the server (drag or double-click) over the same connection. X11 and port forwarding aren't included yet.</p></details>
       </div>
     </section>
   </main>
@@ -222,9 +243,45 @@
         <span class="logo sm" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="2" y="4" width="28" height="24" rx="7"/><path d="M9 12l4 4-4 4M16 20h7" stroke="#fff" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         <span>YuviXterm</span>
       </a>
-      <span class="muted">A modern SSH client for macOS · MobaXterm alternative</span>
+      <span class="muted">A modern SSH client for macOS &amp; Windows · MobaXterm alternative</span>
       <span class="muted">© 2026 YuviXterm</span>
     </div>
   </footer>
+
+  <script>
+    (function () {
+      // Lead with the visitor's own platform in the hero.
+      var isWin = /Win(dows|32|64)/i.test(navigator.userAgent);
+      if (isWin) {
+        var mac = document.querySelector('.cta [data-os="mac"]'), win = document.querySelector('.cta [data-os="win"]');
+        if (mac && win) { mac.classList.add('btn-ghost'); win.classList.remove('btn-ghost'); win.parentNode.insertBefore(win, mac); }
+      }
+
+      // Point each download button at the newest release that actually contains that
+      // platform's file. The static hrefs (releases/latest) remain the fallback.
+      var want = {
+        mac: /\.dmg$/i,
+        win: /-Setup-.*\.exe$/i,
+        'win-portable': /-Portable-.*\.exe$/i
+      };
+      fetch('https://api.github.com/repos/hobsRKM/yuvixterm/releases?per_page=10')
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function (releases) {
+          Object.keys(want).forEach(function (key) {
+            for (var i = 0; i < releases.length; i++) {
+              var rel = releases[i];
+              if (rel.draft || rel.prerelease) continue;
+              var asset = (rel.assets || []).filter(function (a) { return want[key].test(a.name); })[0];
+              if (!asset) continue;
+              document.querySelectorAll('[data-dl="' + key + '"]').forEach(function (a) { a.href = asset.browser_download_url; });
+              var ver = document.querySelector('[data-dl-ver="' + key + '"]');
+              if (ver) ver.textContent = 'Latest: ' + rel.tag_name.replace(/^v/, '') + ' · ' + Math.round(asset.size / 1048576) + ' MB';
+              break;
+            }
+          });
+        })
+        .catch(function () { /* offline or rate-limited: the static links still work */ });
+    })();
+  </script>
 </body>
 </html>
