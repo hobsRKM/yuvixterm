@@ -76,29 +76,6 @@
     return (v >= 100 || i === 0 ? v.toFixed(0) : v.toFixed(1)) + ' ' + u[i];
   }
   const humanRate = (n) => humanBytes(n) + '/s';
-  // Network throughput in bits/s (Kb/s, Mb/s, Gb/s) — both directions in one shared unit.
-  const fmtNet = (rxBytes, txBytes) => {
-    const units = [['bit/s', 1], ['Kb/s', 1e3], ['Mb/s', 1e6], ['Gb/s', 1e9]];
-    const maxBits = Math.max(rxBytes, txBytes) * 8;
-    let u = units[0];
-    for (const c of units) if (maxBits >= c[1]) u = c;
-    const f = (bytes) => { const v = (bytes * 8) / u[1]; return v >= 10 || u[1] === 1 ? v.toFixed(0) : v.toFixed(1); };
-    return `↓${f(rxBytes)} ↑${f(txBytes)} ${u[0]}`;
-  };
-  function humanUptime(sec) {
-    sec = Math.floor(sec);
-    const d = Math.floor(sec / 86400); sec %= 86400;
-    const h = Math.floor(sec / 3600); sec %= 3600;
-    const m = Math.floor(sec / 60);
-    if (d) return `${d}d ${h}h ${m}m`;
-    if (h) return `${h}h ${m}m`;
-    return `${m}m`;
-  }
-  function humanMem(usedKb, totalKb) {
-    const g = (kb) => kb / 1024 / 1024; // KB -> GB
-    const fmt = (x) => (x >= 10 ? x.toFixed(0) : x.toFixed(1));
-    return `${fmt(g(usedKb))}/${fmt(g(totalKb))}G`;
-  }
   // KiB (df 1024-blocks) -> compact human size, e.g. 41152736 -> "39G".
   function fmtKB(kb) {
     const u = ['K', 'M', 'G', 'T', 'P'];
@@ -216,7 +193,7 @@
     tabbar.appendChild(tabEl);
 
     tabs.set(tabId, { tabId, session, term, fit, paneEl: pane, tabEl, status: 'connecting',
-      metrics: null, history: { cpu: [], ram: [], rx: [], tx: [] }, _banner: null,
+      metrics: null, history: { cpu: [] }, _banner: null,
       filesOpen: false, fb: null });
     activateTab(tabId);
   }
@@ -476,110 +453,110 @@
     t._banner = b;
   }
 
-  // ---------- monitor (compact status strip, MobaXterm-style) ----------
-  const MON_PTS = 45; // rolling history length (~90s at 2s/sample)
+  // ---------- monitor (MobaXterm-style status strip) ----------
+  const MON_PTS = 45; // rolling CPU history length (~90s at 2s/sample)
 
   function pushHistory(t, m) {
     const h = t.history;
-    const ram = (m.memTotal && m.memUsed != null) ? (m.memUsed / m.memTotal) * 100 : 0;
     h.cpu.push(m.cpuPct != null ? m.cpuPct : 0);
-    h.ram.push(ram);
-    h.rx.push(m.netRxRate != null ? m.netRxRate : 0);
-    h.tx.push(m.netTxRate != null ? m.netTxRate : 0);
-    for (const k of ['cpu', 'ram', 'rx', 'tx']) if (h[k].length > MON_PTS) h[k].shift();
+    if (h.cpu.length > MON_PTS) h.cpu.shift();
   }
 
-  // Smooth gradient area sparkline (bezier-smoothed).
-  function drawSpark(canvas, series, yMax) {
-    if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth || 120, hg = canvas.clientHeight || 17;
-    if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(hg * dpr); }
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, hg);
-    // faint baseline so a flat/empty series still reads as a graph
-    ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, hg - 1); ctx.lineTo(w, hg - 1); ctx.stroke();
-    const stepX = w / (MON_PTS - 1);
-    for (const s of series) {
-      const data = s.data;
-      if (!data || data.length < 2) continue;
-      const max = yMax || Math.max(1, ...data);
-      const x0 = w - (data.length - 1) * stepX;
-      const pts = data.map((v, i) => [x0 + i * stepX, hg - 1.5 - (Math.min(v, max) / max) * (hg - 3)]);
-      const trace = () => {
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) {
-          const mx = (pts[i - 1][0] + pts[i][0]) / 2, my = (pts[i - 1][1] + pts[i][1]) / 2;
-          ctx.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my);
-        }
-        ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
-      };
-      if (s.fill) {
-        const g = ctx.createLinearGradient(0, 0, 0, hg);
-        // s.fill may be [top, bottom] for a bold filled area, or a single
-        // colour that fades to transparent (legacy).
-        if (Array.isArray(s.fill)) { g.addColorStop(0, s.fill[0]); g.addColorStop(1, s.fill[1]); }
-        else { g.addColorStop(0, s.fill); g.addColorStop(1, 'rgba(0,0,0,0)'); }
-        ctx.beginPath(); trace();
-        ctx.lineTo(pts[pts.length - 1][0], hg); ctx.lineTo(pts[0][0], hg); ctx.closePath();
-        ctx.fillStyle = g; ctx.fill();
-      }
-      ctx.beginPath(); trace();
-      ctx.lineWidth = 1.75; ctx.lineJoin = 'round'; ctx.strokeStyle = s.color; ctx.stroke();
-      // current-value dot at the leading edge
-      const last = pts[pts.length - 1];
-      ctx.beginPath(); ctx.arc(last[0], last[1], 2, 0, Math.PI * 2); ctx.fillStyle = s.color; ctx.fill();
-    }
+  // MobaXterm number formats: "6.04 GB", "11.52 Mb/s", "34 days".
+  function fmtSize2(kb) {
+    const u = ['KB', 'MB', 'GB', 'TB', 'PB'];
+    let v = kb, i = 0;
+    while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+    return v.toFixed(2) + ' ' + u[i];
   }
-
-  const gCanvas = (k) => document.querySelector(`#monitor .gcell[data-k="${k}"] canvas`);
-  const setV = (k, v) => { const e = document.querySelector(`#monitor .gcell[data-k="${k}"] .gv`); if (e) e.textContent = v; };
+  function fmtBits2(bytesPerSec) {
+    const bits = Math.max(0, bytesPerSec || 0) * 8;
+    const u = [['Kb/s', 1e3], ['Mb/s', 1e6], ['Gb/s', 1e9]];
+    let c = u[0];
+    for (const x of u) if (bits >= x[1]) c = x;
+    return (bits / c[1]).toFixed(2) + ' ' + c[0];
+  }
+  function fmtUptimeWords(sec) {
+    sec = Math.floor(sec);
+    const d = Math.floor(sec / 86400), h = Math.floor(sec / 3600), m = Math.floor(sec / 60);
+    if (d >= 1) return d + (d === 1 ? ' day' : ' days');
+    if (h >= 1) return h + (h === 1 ? ' hour' : ' hours');
+    return m + ' min';
+  }
   const fmtLoad = (x) => { const n = parseFloat(x); return isFinite(n) ? n.toFixed(2) : '—'; };
 
-  // Disks of the active tab, for the hover panel. Root '/' drives the DISK tile.
+  // Small black CPU-history box with a green trace, 0–100%.
+  function drawCpuGraph(canvas, data) {
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth || 56, hg = canvas.clientHeight || 16;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(hg * dpr)) {
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(hg * dpr);
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, hg);
+    ctx.strokeStyle = 'rgba(46,230,46,.2)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, Math.round(hg / 2) + .5); ctx.lineTo(w, Math.round(hg / 2) + .5); ctx.stroke();
+    if (!data || data.length < 2) return;
+    const stepX = w / (MON_PTS - 1), x0 = w - (data.length - 1) * stepX;
+    ctx.beginPath();
+    data.forEach((v, i) => {
+      const x = x0 + i * stepX, y = hg - 1 - (Math.min(100, Math.max(0, v)) / 100) * (hg - 2);
+      if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+    });
+    ctx.strokeStyle = '#2ee62e'; ctx.lineWidth = 1.25; ctx.lineJoin = 'round'; ctx.stroke();
+  }
+
+  const setText = (id, v) => { const e = el(id); if (e) e.textContent = v; };
+  const DISK_ICON = '<svg class="mi mi-disk" viewBox="0 0 16 16"><rect x="1.5" y="3" width="13" height="10" rx="2"/><circle cx="8" cy="8" r="2.6" fill="#0d1117"/><circle cx="8" cy="8" r=".9"/><circle cx="12" cy="11" r=".8" fill="#0d1117"/></svg>';
+
+  // Disks of the active tab: one "mount: NN%" cell each, plus the hover panel.
   let monDisks = [];
 
-  // DISK renders as a colour-graded fill bar rather than a sparkline (it barely changes).
-  function setDisk(pct, count) {
-    const label = pct != null ? Math.round(pct) + '%' : '—';
-    setV('disk', count > 1 ? `${label} ·${count}` : label);
-    const cell = document.querySelector('#monitor .gcell[data-k="disk"]');
-    if (cell) cell.title = count > 1 ? `${count} mounted disks — hover for details` : '';
-    const bar = document.querySelector('#monitor .gcell[data-k="disk"] .track > i');
-    if (!bar) return;
-    const p = pct != null ? Math.max(0, Math.min(100, pct)) : 0;
-    bar.style.width = p + '%';
-    bar.style.background = diskColor(p);
+  function renderDisks(disks) {
+    const box = el('mon-disks');
+    if (!box) return;
+    if (!disks.length) { box.innerHTML = `<span class="ms" data-k="disk">${DISK_ICON}<span class="mv">—</span></span>`; return; }
+    const cell = (d, i) => {
+      const p = Math.round(d.pct);
+      const cls = p >= 90 ? ' hot' : p >= 70 ? ' warm' : '';
+      return `<span class="ms${cls}" data-k="disk">${i === 0 ? DISK_ICON : ''}<span class="mv">${escapeHtml(d.mount)}: ${p}%</span></span>`;
+    };
+    const paint = (n) => {
+      box.innerHTML = disks.slice(0, n).map(cell).join('') +
+        (disks.length > n ? `<span class="ms more" data-k="disk"><span class="mv">+${disks.length - n}</span></span>` : '');
+    };
+    // Show as many mounts as fit in the remaining width; fold the rest into "+N"
+    // (the hover panel always lists every mount).
+    let n = disks.length;
+    paint(n);
+    while (n > 1 && box.scrollWidth > box.clientWidth + 1) paint(--n);
   }
 
   function clearMonitor() {
-    ['cpu', 'ram', 'net'].forEach((k) => { const cv = gCanvas(k); if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); setV(k, '—'); });
-    monDisks = []; setDisk(null, 0); hideDiskTip();
-    el('mon-load').textContent = '—'; el('mon-up').textContent = '—';
-    el('mon-host').textContent = '—'; el('mon-user').textContent = '';
+    drawCpuGraph(el('mon-graph'), []);
+    for (const id of ['mon-host', 'mon-cpu', 'mon-ram', 'mon-tx', 'mon-rx', 'mon-up', 'mon-user']) setText(id, '—');
+    const cpu = document.querySelector('#monitor .ms[data-k="cpu"]'); if (cpu) cpu.title = 'CPU';
+    monDisks = []; renderDisks([]); hideDiskTip();
   }
 
   function renderMonitor(t) {
     if (!t) return clearMonitor();
     const m = t.metrics, h = t.history, s = t.session || {};
-    drawSpark(gCanvas('cpu'), [{ data: h.cpu, color: '#58a6ff', fill: ['rgba(88,166,255,0.60)', 'rgba(88,166,255,0.06)'] }], 100);
-    drawSpark(gCanvas('ram'), [{ data: h.ram, color: '#3fb950', fill: ['rgba(63,185,80,0.55)', 'rgba(63,185,80,0.06)'] }], 100);
-    drawSpark(gCanvas('net'), [
-      { data: h.rx, color: '#56d4dd', fill: ['rgba(86,212,221,0.45)', 'rgba(86,212,221,0.05)'] },
-      { data: h.tx, color: '#bc8cff', fill: ['rgba(188,140,255,0.30)', 'rgba(188,140,255,0.04)'] },
-    ], Math.max(1024, ...h.rx, ...h.tx));
-    setV('cpu', m && m.cpuPct != null ? Math.round(m.cpuPct) + '%' : '—');
-    setV('ram', m && m.memTotal ? humanMem(m.memUsed, m.memTotal) : '—');
-    setV('net', m && m.netRxRate != null ? fmtNet(m.netRxRate, m.netTxRate) : '—');
+    setText('mon-host', s.name || s.host || '—');
+    setText('mon-user', s.username || '—');
+    setText('mon-cpu', m && m.cpuPct != null ? Math.round(m.cpuPct) + '%' : '—');
+    drawCpuGraph(el('mon-graph'), h.cpu);
+    setText('mon-ram', m && m.memTotal ? `${fmtSize2(m.memUsed)} / ${fmtSize2(m.memTotal)}` : '—');
+    setText('mon-tx', m && m.netTxRate != null ? fmtBits2(m.netTxRate) : '—');
+    setText('mon-rx', m && m.netRxRate != null ? fmtBits2(m.netRxRate) : '—');
+    setText('mon-up', m && m.uptime != null ? fmtUptimeWords(m.uptime) : '—');
+    const cpu = document.querySelector('#monitor .ms[data-k="cpu"]');
+    if (cpu) cpu.title = m && m.load ? `CPU · load ${fmtLoad(m.load.one)} ${fmtLoad(m.load.five)} ${fmtLoad(m.load.fifteen)}` : 'CPU';
     monDisks = (m && Array.isArray(m.disks)) ? m.disks : [];
-    setDisk(m && m.diskPct != null ? m.diskPct : null, monDisks.length);
+    renderDisks(monDisks);
     if (!el('disk-tip').hidden) renderDiskTip(); // live-refresh if open
-    el('mon-load').innerHTML = m && m.load ? `${fmtLoad(m.load.one)} <span class="dim">${fmtLoad(m.load.five)} ${fmtLoad(m.load.fifteen)}</span>` : '—';
-    el('mon-up').textContent = m && m.uptime != null ? humanUptime(m.uptime) : '—';
-    el('mon-host').textContent = s.name || s.host || '—';
-    el('mon-user').textContent = s.username ? '· ' + s.username : '';
   }
 
   // ---------- disk hover panel (all mounts) ----------
@@ -598,11 +575,11 @@
     tip.innerHTML = `<div class="tip-h">Disks · ${monDisks.length} mounted</div>${rows}`;
   }
   function showDiskTip() {
-    const tip = el('disk-tip'), cell = document.querySelector('#monitor .gcell[data-k="disk"]');
-    if (!cell) return;
+    const tip = el('disk-tip'), anchor = el('mon-disks');
+    if (!anchor) return;
     renderDiskTip();
     tip.hidden = false;
-    const r = cell.getBoundingClientRect();
+    const r = anchor.getBoundingClientRect();
     tip.style.bottom = (window.innerHeight - r.top + 8) + 'px';
     tip.style.top = 'auto';
     // clamp horizontally once we know the panel width
@@ -732,14 +709,14 @@
   el('term-interrupt').addEventListener('click', () => sendCtrl('\x03')); // Ctrl+C -> SIGINT
   el('term-eof').addEventListener('click', () => sendCtrl('\x1a'));       // Ctrl+Z -> SIGTSTP
   el('files-toggle').addEventListener('click', toggleFiles);
-  window.addEventListener('resize', () => { const t = tabs.get(activeTab); if (t) fitActive(t); });
+  window.addEventListener('resize', () => { const t = tabs.get(activeTab); if (t) fitActive(t); renderDisks(monDisks); });
 
-  // DISK tile: hover to reveal every mounted filesystem (used/total/free).
+  // Mount cells: hover to reveal every mounted filesystem (used/total/free).
   (() => {
-    const cell = document.querySelector('#monitor .gcell[data-k="disk"]');
-    if (!cell) return;
-    cell.addEventListener('mouseenter', showDiskTip);
-    cell.addEventListener('mouseleave', hideDiskTip);
+    const cells = el('mon-disks');
+    if (!cells) return;
+    cells.addEventListener('mouseenter', showDiskTip);
+    cells.addEventListener('mouseleave', hideDiskTip);
   })();
 
   // resizable files dock

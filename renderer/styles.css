@@ -60,7 +60,7 @@ body {
 .session .edit:hover { color: var(--accent); }
 
 /* Workspace */
-#workspace { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; background: var(--bg); }
+#workspace { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; min-height: 0; background: var(--bg); } /* min-height:0 keeps a tall file list from growing the 1fr row past the window */
 #tabbar { display: flex; gap: 4px; align-items: center; background: var(--bg-elev); border-bottom: 1px solid var(--border-soft); padding: 6px 8px 0; min-height: 39px; overflow-x: auto; }
 .tab { display: flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 8px 8px 0 0; background: transparent; color: var(--fg-dim); cursor: pointer; white-space: nowrap; position: relative; transition: background .12s, color .12s; }
 .tab:hover { background: var(--bg-elev2); color: var(--fg); }
@@ -87,33 +87,29 @@ body {
 .empty { color: var(--fg-faint); text-align: center; margin-top: 24vh; font-size: 13px; line-height: 1.8; }
 .empty b { color: var(--fg-dim); }
 
-/* Monitor bar (uniform telemetry tiles, MobaXterm-style) */
-#monitor { display: flex; align-items: stretch; gap: 7px; background: linear-gradient(180deg, #12161d, #0e131a); border-top: 1px solid var(--border); padding: 8px 12px; height: 66px; font-variant-numeric: tabular-nums; }
-.mon-graphs { display: flex; gap: 7px; flex: 1 1 auto; min-width: 0; }
-.gcell { flex: 1 1 0; min-width: 0; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 9px; padding: 5px 9px 6px; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
-.gcell[data-k="net"] { flex-grow: 1.35; }
-.gcell[data-k="disk"] { flex-grow: .85; }
-.gcell .gh { display: flex; align-items: baseline; justify-content: space-between; gap: 5px; line-height: 1; }
-.gk { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-faint); font-weight: 700; flex: none; }
-.gv { font-size: 12px; font-weight: 650; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; flex: 1 1 auto; }
-.gcell[data-k="net"] .gv { font-size: 11px; letter-spacing: -.01em; }
-.gcell canvas.spark { flex: 1 1 auto; width: 100%; min-height: 0; display: block; }
-.gbar { flex: 1 1 auto; display: flex; align-items: center; }
-.gbar .track { flex: 1; height: 9px; border-radius: 5px; background: var(--bg-inset); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .02); }
-.gbar .track > i { display: block; height: 100%; width: 0; border-radius: 5px; background: var(--green); transition: width .3s, background .3s; }
-.mon-info { flex: none; display: flex; align-items: stretch; gap: 7px; }
-.istack { background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 9px; padding: 4px 12px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
-.irow { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; line-height: 1; }
-.ik { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-faint); font-weight: 700; }
-.iv { font-size: 12px; font-weight: 650; color: var(--fg); white-space: nowrap; text-align: right; }
-.iv .dim { color: var(--fg-faint); font-weight: 500; font-size: 10.5px; }
-.conn-chip { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 9px; }
-.conn-chip .cdot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); flex: none; }
-.conn-chip .ch { font-weight: 650; }
-.conn-chip .cu { color: var(--fg-faint); font-size: 12px; }
+/* Status strip (MobaXterm-style): one 26px row of icon + value cells split by hairlines */
+#monitor { display: flex; align-items: stretch; height: 26px; background: var(--bg-elev); border-top: 1px solid var(--border); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+.ms { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border-right: 1px solid var(--border); color: var(--fg); flex: none; }
+.ms .mi { width: 14px; height: 14px; flex: none; fill: currentColor; }
+.ms .mv { line-height: 1; }
+.ms[data-k="host"] .mv { font-weight: 650; }
+.mi-host { color: var(--accent); }
+.mi-cpu { color: var(--green); }
+.mi-ram { color: var(--green); }
+.mi-tx { color: var(--green); }
+.mi-rx { color: var(--accent); }
+.mi-up { color: var(--cyan); }
+.mi-user { color: #d0a85c; }
+.mi-disk { color: var(--fg-dim); }
+.ms-graph { padding: 0 7px; }
+.ms-graph canvas { width: 56px; height: 16px; display: block; background: #000; border: 1px solid #3a4250; box-sizing: content-box; }
+#mon-disks { display: inline-flex; align-items: stretch; min-width: 0; overflow: hidden; }
+#mon-disks .ms { cursor: help; }
+#mon-disks .ms.hot .mv { color: var(--red); }
+#mon-disks .ms.warm .mv { color: var(--yellow); }
+#mon-disks .ms.more .mv { color: var(--fg-faint); }
 
-/* DISK hover panel — every mounted filesystem, MobaXterm-style */
-.gcell[data-k="disk"] { cursor: help; }
+/* DISK hover panel — every mounted filesystem (used / total / free) */
 .mon-tip { position: fixed; z-index: 60; background: var(--bg-elev2); border: 1px solid var(--border); border-radius: 11px; box-shadow: var(--shadow); padding: 10px 12px; min-width: 250px; max-width: 400px; font-variant-numeric: tabular-nums; }
 .mon-tip .tip-h { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-faint); font-weight: 700; margin-bottom: 9px; }
 .mon-tip .dt-row { margin-bottom: 10px; }
