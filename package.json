@@ -1,13 +1,15 @@
 {
   "name": "mac-ssh-client",
   "version": "0.2.3",
-  "description": "Minimal MobaXterm-style SSH client for macOS: saved-host sidebar, tabbed terminals, and a live remote resource monitor.",
+  "description": "Minimal MobaXterm-style SSH client: saved-host sidebar, tabbed terminals, and a live remote resource monitor.",
+  "author": "Yuvaraj Mudaliar",
   "main": "main/index.js",
   "scripts": {
     "start": "electron .",
     "test": "node --test",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "icons:win": "electron scripts/make-win-icon.js"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.10.0",
@@ -44,6 +46,7 @@
     },
     "npmRebuild": false,
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         "nsis",
         "portable"
@@ -53,7 +56,15 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "YuviXterm",
+      "uninstallDisplayName": "YuviXterm"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
     }
   }
 }

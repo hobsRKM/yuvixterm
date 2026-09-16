@@ -11,6 +11,13 @@ const { registerIpc } = require('./ipc');
 // bundle's productName ("YuviXterm"), so saved sessions survive rebrands.
 app.setName('mac-ssh-client');
 
+// On Windows, use the same AppUserModelId that electron-builder stamps on the
+// installer's Start Menu / desktop shortcuts, so the taskbar groups the running
+// window with them and "Pin to taskbar" doesn't produce a duplicate icon.
+// Must match "build.appId" in package.json (a literal: electron-builder strips
+// the "build" section from the packaged package.json).
+if (process.platform === 'win32') app.setAppUserModelId('com.yuvim.macssh');
+
 let mainWindow = null;
 let connections = null;
 
