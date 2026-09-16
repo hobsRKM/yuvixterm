@@ -30,7 +30,8 @@ MobaXterm never came to the Mac. **YuviXterm** brings the parts Mac users miss m
 
 - **Saved-host sidebar** — group and search across all your servers; one click to connect.
 - **Tabbed terminals** — real [xterm.js](https://xtermjs.org) terminals with full color & resize; many live sessions at once.
-- **Live resource monitor** — a MobaXterm-style bottom bar graphs the *remote* box's CPU, RAM, network (Mb/s), disk, load & uptime — live, over the same connection.
+- **Terminal your way** — right-click for copy · paste · select-all · clear, step the text size up or down (⌘/Ctrl +/−/0), and switch between four colour themes — Catppuccin, Dracula, Solarized Dark, Light. Your size & theme are remembered.
+- **Live resource monitor** — a compact MobaXterm-style bottom bar graphs the *remote* box's CPU, RAM and network (Mb/s), with disk, load and uptime alongside. Hover the disk tile for **every mounted filesystem** — used / total / free per mount — live, over the same connection.
 - **Dual-pane SFTP file browser** — move files between your machine and the server on the same connection: drag or double-click, with a live transfer bar, plus new-folder / rename / delete on both sides.
 - **Encrypted credentials** — logins sealed in the OS's secure storage (macOS Keychain / Windows DPAPI), never plaintext; SSH keys, key passphrases & `ssh-agent` all supported.
 - **Per-host advanced options** — custom key-exchange order, keepalive interval, pinned host-key fingerprints.
@@ -80,7 +81,7 @@ The renderer talks to the main process only through a typed `window.api` bridge.
 
 ## Roadmap
 
-Included: terminals, live monitor, SFTP file browser (single files). Not yet: recursive folder transfer, `chmod`/permissions, X11, and port forwarding.
+Included: tabbed terminals (copy/paste, zoom, colour themes), live monitor with per-mount disk detail, SFTP file browser (single files). Not yet: recursive folder transfer, `chmod`/permissions, X11, and port forwarding.
 
 ## License
 
