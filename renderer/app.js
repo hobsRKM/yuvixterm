@@ -55,6 +55,14 @@
     const fmt = (x) => (x >= 10 ? x.toFixed(0) : x.toFixed(1));
     return `${fmt(g(usedKb))}/${fmt(g(totalKb))}G`;
   }
+  // KiB (df 1024-blocks) -> compact human size, e.g. 41152736 -> "39G".
+  function fmtKB(kb) {
+    const u = ['K', 'M', 'G', 'T', 'P'];
+    let v = kb, i = 0;
+    while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+    return (v >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)) + u[i];
+  }
+  const diskColor = (p) => (p >= 90 ? 'var(--red)' : p >= 70 ? 'var(--yellow)' : 'var(--green)');
   const escapeHtml = (s) => String(s == null ? '' : s)
     .replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const val = (id) => { const e = el(id); return e ? e.value.trim() : ''; };
@@ -380,19 +388,25 @@
   const setV = (k, v) => { const e = document.querySelector(`#monitor .gcell[data-k="${k}"] .gv`); if (e) e.textContent = v; };
   const fmtLoad = (x) => { const n = parseFloat(x); return isFinite(n) ? n.toFixed(2) : '—'; };
 
+  // Disks of the active tab, for the hover panel. Root '/' drives the DISK tile.
+  let monDisks = [];
+
   // DISK renders as a colour-graded fill bar rather than a sparkline (it barely changes).
-  function setDisk(pct) {
-    setV('disk', pct != null ? Math.round(pct) + '%' : '—');
+  function setDisk(pct, count) {
+    const label = pct != null ? Math.round(pct) + '%' : '—';
+    setV('disk', count > 1 ? `${label} ·${count}` : label);
+    const cell = document.querySelector('#monitor .gcell[data-k="disk"]');
+    if (cell) cell.title = count > 1 ? `${count} mounted disks — hover for details` : '';
     const bar = document.querySelector('#monitor .gcell[data-k="disk"] .track > i');
     if (!bar) return;
     const p = pct != null ? Math.max(0, Math.min(100, pct)) : 0;
     bar.style.width = p + '%';
-    bar.style.background = p >= 90 ? 'var(--red)' : p >= 70 ? 'var(--yellow)' : 'var(--green)';
+    bar.style.background = diskColor(p);
   }
 
   function clearMonitor() {
     ['cpu', 'ram', 'net'].forEach((k) => { const cv = gCanvas(k); if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); setV(k, '—'); });
-    setDisk(null);
+    monDisks = []; setDisk(null, 0); hideDiskTip();
     el('mon-load').textContent = '—'; el('mon-up').textContent = '—';
     el('mon-host').textContent = '—'; el('mon-user').textContent = '';
   }
@@ -406,12 +420,44 @@
     setV('cpu', m && m.cpuPct != null ? Math.round(m.cpuPct) + '%' : '—');
     setV('ram', m && m.memTotal ? humanMem(m.memUsed, m.memTotal) : '—');
     setV('net', m && m.netRxRate != null ? fmtNet(m.netRxRate, m.netTxRate) : '—');
-    setDisk(m && m.diskPct != null ? m.diskPct : null);
+    monDisks = (m && Array.isArray(m.disks)) ? m.disks : [];
+    setDisk(m && m.diskPct != null ? m.diskPct : null, monDisks.length);
+    if (!el('disk-tip').hidden) renderDiskTip(); // live-refresh if open
     el('mon-load').innerHTML = m && m.load ? `${fmtLoad(m.load.one)} <span class="dim">${fmtLoad(m.load.five)} ${fmtLoad(m.load.fifteen)}</span>` : '—';
     el('mon-up').textContent = m && m.uptime != null ? humanUptime(m.uptime) : '—';
     el('mon-host').textContent = s.name || s.host || '—';
     el('mon-user').textContent = s.username ? '· ' + s.username : '';
   }
+
+  // ---------- disk hover panel (all mounts) ----------
+  function renderDiskTip() {
+    const tip = el('disk-tip');
+    if (!monDisks.length) { tip.innerHTML = '<div class="tip-h">Disks</div><div class="tip-empty">No disk data yet…</div>'; return; }
+    const rows = monDisks.map((d) => {
+      const p = Math.max(0, Math.min(100, d.pct));
+      return `<div class="dt-row">
+        <div class="dt-top"><span class="dt-mount">${escapeHtml(d.mount)}</span>` +
+        `<span class="dt-nums">${fmtKB(d.usedKb)} / ${fmtKB(d.sizeKb)}<span class="pct">${Math.round(d.pct)}%</span></span></div>
+        <div class="dt-track"><i style="width:${p}%;background:${diskColor(d.pct)}"></i></div>
+        <div class="dt-free">${fmtKB(d.availKb)} free · ${escapeHtml(d.fs)}</div>
+      </div>`;
+    }).join('');
+    tip.innerHTML = `<div class="tip-h">Disks · ${monDisks.length} mounted</div>${rows}`;
+  }
+  function showDiskTip() {
+    const tip = el('disk-tip'), cell = document.querySelector('#monitor .gcell[data-k="disk"]');
+    if (!cell) return;
+    renderDiskTip();
+    tip.hidden = false;
+    const r = cell.getBoundingClientRect();
+    tip.style.bottom = (window.innerHeight - r.top + 8) + 'px';
+    tip.style.top = 'auto';
+    // clamp horizontally once we know the panel width
+    const w = tip.offsetWidth;
+    const left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+    tip.style.left = left + 'px';
+  }
+  function hideDiskTip() { const tip = el('disk-tip'); if (tip) tip.hidden = true; }
 
   // ---------- session editor ----------
   function openEditor(session) {
@@ -535,6 +581,14 @@
   el('files-toggle').addEventListener('click', toggleFiles);
   window.addEventListener('resize', () => { const t = tabs.get(activeTab); if (t) fitActive(t); });
 
+  // DISK tile: hover to reveal every mounted filesystem (used/total/free).
+  (() => {
+    const cell = document.querySelector('#monitor .gcell[data-k="disk"]');
+    if (!cell) return;
+    cell.addEventListener('mouseenter', showDiskTip);
+    cell.addEventListener('mouseleave', hideDiskTip);
+  })();
+
   // resizable files dock
   (() => {
     const sp = el('files-splitter'), dock = el('files-dock'), stage = el('stage');
@@ -581,6 +635,11 @@
         netRxRate: 60000 + Math.abs(Math.sin(i / 4)) * 240000 + Math.random() * 40000,
         netTxRate: 20000 + Math.abs(Math.cos(i / 6)) * 90000,
         uptime: 267060 + i * 2, load: { one: 0.42, five: 0.31, fifteen: 0.20 },
+        disks: [
+          { fs: '/dev/sda1', mount: '/', sizeKb: 41152736, usedKb: 18107204, availKb: 23045532, pct: 44 },
+          { fs: '/dev/sdb1', mount: '/data', sizeKb: 515928320, usedKb: 98026380, availKb: 417901940, pct: 19 },
+          { fs: '/dev/sda2', mount: '/home', sizeKb: 206292968, usedKb: 158645486, availKb: 47647482, pct: 77 },
+        ],
       };
       t.metrics = m; pushHistory(t, m);
     }

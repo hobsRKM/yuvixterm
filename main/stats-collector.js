@@ -19,6 +19,39 @@ function matchInt(s, re) {
   return m ? parseInt(m[1], 10) : null;
 }
 
+// Pseudo/virtual filesystems we never want to show as "disks".
+const PSEUDO_FS = new Set([
+  'tmpfs', 'devtmpfs', 'devfs', 'udev', 'overlay', 'overlayfs', 'aufs', 'none',
+  'ramfs', 'squashfs', 'mqueue', 'cgroup', 'cgroup2', 'sysfs', 'proc', 'procfs',
+  'debugfs', 'tracefs', 'securityfs', 'pstore', 'efivarfs', 'configfs', 'bpf',
+  'hugetlbfs', 'autofs', 'fusectl', 'nsfs', 'binfmt_misc', 'shm',
+]);
+const PSEUDO_MOUNT = /^\/(dev|sys|proc|run|snap|boot\/efi)(\/|$)/;
+
+// Parse `df -P` output into one entry per real filesystem.
+function parseDisks(diskSec) {
+  const disks = [];
+  for (const line of diskSec.split('\n')) {
+    const t = line.trim();
+    if (!t || /^Filesystem\b/i.test(t)) continue;
+    const parts = t.split(/\s+/);
+    if (parts.length < 6) continue;
+    const fs = parts[0];
+    const mount = parts.slice(5).join(' ');
+    if (PSEUDO_FS.has(fs) || /^\/dev\/loop\d/.test(fs) || PSEUDO_MOUNT.test(mount)) continue;
+    const sizeKb = parseInt(parts[1], 10);
+    const usedKb = parseInt(parts[2], 10);
+    const availKb = parseInt(parts[3], 10);
+    const pct = parseInt(parts[4], 10);
+    if ([sizeKb, usedKb, availKb, pct].some((n) => Number.isNaN(n))) continue;
+    if (sizeKb <= 0) continue;
+    disks.push({ fs, mount, sizeKb, usedKb, availKb, pct });
+  }
+  // Root first, then largest filesystems first.
+  disks.sort((a, b) => (a.mount === '/' ? -1 : b.mount === '/' ? 1 : b.sizeKb - a.sizeKb));
+  return disks;
+}
+
 /** @returns {{ok:true, cpu, memTotal, memAvail, netRx, netTx, uptime, load1, load5, load15, diskPct} | {ok:false}} */
 function parseSample(raw) {
   if (typeof raw !== 'string' || raw.indexOf('<<<STATS') < 0 || raw.indexOf('STATS>>>') < 0) {
@@ -59,7 +92,8 @@ function parseSample(raw) {
 
   const uptime = parseFloat(upSec.trim().split(/\s+/)[0]);
   const loadParts = loadSec.trim().split(/\s+/).map(Number);
-  const diskMatch = diskSec.match(/(\d+)%/);
+  const disks = parseDisks(diskSec);
+  const rootDisk = disks.find((d) => d.mount === '/') || disks[0] || null;
 
   return {
     ok: true,
@@ -71,7 +105,8 @@ function parseSample(raw) {
     load1: loadParts[0] ?? 0,
     load5: loadParts[1] ?? 0,
     load15: loadParts[2] ?? 0,
-    diskPct: diskMatch ? parseInt(diskMatch[1], 10) : null,
+    diskPct: rootDisk ? rootDisk.pct : null,
+    disks,
   };
 }
 
@@ -86,7 +121,7 @@ function computeMetrics(prev, cur, intervalSec) {
   const interval = intervalSec > 0 ? intervalSec : 1;
   if (!cur || !cur.ok) {
     return { cpuPct: 0, memUsed: null, memTotal: null, memAvail: null,
-      diskPct: null, netRxRate: 0, netTxRate: 0, uptime: null, load: null };
+      diskPct: null, disks: [], netRxRate: 0, netTxRate: 0, uptime: null, load: null };
   }
   let cpuPct = 0;
   if (prev && prev.ok) {
@@ -103,6 +138,7 @@ function computeMetrics(prev, cur, intervalSec) {
     memTotal: cur.memTotal,
     memAvail: cur.memAvail,
     diskPct: cur.diskPct,
+    disks: cur.disks || [],
     netRxRate: rate(prev, cur, 'netRx', interval),
     netTxRate: rate(prev, cur, 'netTx', interval),
     uptime: cur.uptime,

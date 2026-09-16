@@ -13,7 +13,7 @@ const STATS_LOOP =
   "echo '<<<NET'; cat /proc/net/dev 2>/dev/null; " +
   "echo '<<<UP'; cat /proc/uptime 2>/dev/null; " +
   "echo '<<<LOAD'; cat /proc/loadavg 2>/dev/null; " +
-  "echo '<<<DISK'; df -P / 2>/dev/null | tail -1; " +
+  "echo '<<<DISK'; df -P 2>/dev/null; " +
   "echo 'STATS>>>'; sleep " + STATS_INTERVAL + "; done";
 
 function friendlyError(err) {

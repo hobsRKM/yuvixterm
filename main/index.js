@@ -7,16 +7,19 @@ const { ConnectionManager } = require('./connection-manager');
 const { FileManager } = require('./file-manager');
 const { registerIpc } = require('./ipc');
 
-// Keep the app data directory stable ("mac-ssh-client") regardless of the
-// bundle's productName ("YuviXterm"), so saved sessions survive rebrands.
+// Keep the app data directory + Keychain safeStorage key stable
+// ("mac-ssh-client") regardless of the bundle's productName ("YuviXterm"), so
+// saved sessions and their encrypted secrets survive the rebrand.
 app.setName('mac-ssh-client');
-
-// On Windows, use the same AppUserModelId that electron-builder stamps on the
-// installer's Start Menu / desktop shortcuts, so the taskbar groups the running
-// window with them and "Pin to taskbar" doesn't produce a duplicate icon.
-// Must match "build.appId" in package.json (a literal: electron-builder strips
-// the "build" section from the packaged package.json).
-if (process.platform === 'win32') app.setAppUserModelId('com.yuvim.macssh');
+// ...but present the real brand everywhere the user actually sees a name:
+// the macOS "About" panel (and the app/Dock name) show "YuviXterm", not the
+// internal storage id. This does not move the data directory.
+app.setAboutPanelOptions({
+  applicationName: 'YuviXterm',
+  applicationVersion: require('../package.json').version,
+  version: '',
+  copyright: '© 2026 Yuvaraj Mudaliar · A cross-platform SSH client with a live server monitor',
+});
 
 let mainWindow = null;
 let connections = null;

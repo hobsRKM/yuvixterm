@@ -17,7 +17,31 @@ test('parseSample extracts fields from a well-formed block', () => {
   assert.equal(s.netTx, 200000);
   assert.equal(s.uptime, 123456.78);
   assert.equal(s.load1, 0.15);
-  assert.equal(s.diskPct, 44);
+  assert.equal(s.diskPct, 44); // root '/' mount
+});
+
+test('parseSample reads multiple disks and filters pseudo filesystems', () => {
+  const s = parseSample(read('proc-a.txt'));
+  // udev, tmpfs (/run), and the /snap/core loop mount are all excluded;
+  // order is root first, then largest filesystem first (/data > /home).
+  assert.deepEqual(s.disks.map((d) => d.mount), ['/', '/data', '/home']);
+  const root = s.disks[0];
+  assert.equal(root.mount, '/');
+  assert.equal(root.sizeKb, 41152736);
+  assert.equal(root.usedKb, 16000000);
+  assert.equal(root.availKb, 23000000);
+  assert.equal(root.pct, 44);
+  const data = s.disks.find((d) => d.mount === '/data');
+  assert.equal(data.pct, 19);
+});
+
+test('computeMetrics passes the disks array through', () => {
+  const a = parseSample(read('proc-a.txt'));
+  const b = parseSample(read('proc-b.txt'));
+  const m = computeMetrics(a, b, 2);
+  assert.equal(m.disks.length, 3);
+  assert.equal(m.disks[0].mount, '/');
+  assert.equal(computeMetrics(null, null, 2).disks.length, 0);
 });
 
 test('computeMetrics derives cpu% and net rate from two samples', () => {
