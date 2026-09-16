@@ -20,6 +20,12 @@ app.setAboutPanelOptions({
   version: '',
   copyright: '© 2026 Yuvaraj Mudaliar · A cross-platform SSH client with a live server monitor',
 });
+// On Windows, use the same AppUserModelId that electron-builder stamps on the
+// installer's Start Menu / desktop shortcuts, so the taskbar groups the running
+// window with them and "Pin to taskbar" doesn't produce a duplicate icon.
+// Must match "build.appId" in package.json (a literal: electron-builder strips
+// the "build" section from the packaged package.json).
+if (process.platform === 'win32') app.setAppUserModelId('com.yuvim.macssh');
 
 let mainWindow = null;
 let connections = null;
