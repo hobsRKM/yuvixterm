@@ -53,7 +53,9 @@ cd yuvixterm
 npm install
 npm start        # run in dev
 npm test         # unit tests (node --test)
-npm run dist     # build dist/YuviXterm-<version>-universal.dmg
+npm run dist     # package for your current OS -> dist/
+                 #   on macOS   -> YuviXterm-<version>-universal.dmg
+                 #   on Windows -> YuviXterm-Setup-<version>.exe (+ a portable .exe)
 ```
 
 ## How it works

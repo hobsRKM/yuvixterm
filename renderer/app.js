@@ -130,6 +130,9 @@
     term.loadAddon(fit);
     term.open(host);
     term.onData((d) => window.api.conn.write(tabId, d));
+    // Keep keystrokes (incl. Ctrl+C / Ctrl+Z) flowing: any click in the terminal
+    // pane refocuses the terminal, so focus never gets stranded on padding/output.
+    pane.addEventListener('mousedown', () => setTimeout(() => term.focus(), 0));
 
     const tabEl = document.createElement('div');
     tabEl.className = 'tab st-connecting';
@@ -179,6 +182,7 @@
       t.fb.init();
     }
     layoutFiles();
+    if (!t.filesOpen) setTimeout(() => t.term.focus(), 0); // return keys to the terminal
   }
   function layoutFiles() {
     const t = tabs.get(activeTab);
@@ -508,6 +512,9 @@
 
   el('add-session').addEventListener('click', () => openEditor(null));
   el('session-search').addEventListener('input', (e) => { sessionFilter = e.target.value; renderSidebar(); });
+  const sendCtrl = (code) => { if (!activeTab) return; window.api.conn.write(activeTab, code); const t = tabs.get(activeTab); if (t) t.term.focus(); };
+  el('term-interrupt').addEventListener('click', () => sendCtrl('\x03')); // Ctrl+C -> SIGINT
+  el('term-eof').addEventListener('click', () => sendCtrl('\x1a'));       // Ctrl+Z -> SIGTSTP
   el('files-toggle').addEventListener('click', toggleFiles);
   window.addEventListener('resize', () => { const t = tabs.get(activeTab); if (t) fitActive(t); });
 

@@ -1,6 +1,6 @@
 {
   "name": "mac-ssh-client",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "Minimal MobaXterm-style SSH client for macOS: saved-host sidebar, tabbed terminals, and a live remote resource monitor.",
   "main": "main/index.js",
   "scripts": {
@@ -42,6 +42,18 @@
       ],
       "category": "public.app-category.developer-tools"
     },
-    "npmRebuild": false
+    "npmRebuild": false,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    }
   }
 }

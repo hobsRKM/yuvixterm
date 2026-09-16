@@ -184,3 +184,8 @@ button.btn.danger { background: var(--red); border-color: var(--red); color: #ff
 .fb-pathinput { flex: 1; min-width: 0; background: var(--bg-inset); border: 1px solid var(--accent-2); border-radius: 5px; padding: 2px 6px; color: var(--fg); font-family: ui-monospace, monospace; font-size: 11px; outline: none; }
 .fb-tools button[disabled] { opacity: .35; cursor: default; }
 .fb-tools button[disabled]:hover { background: var(--bg-elev2); color: var(--fg-dim); }
+
+/* Terminal action buttons (manual interrupt/suspend) */
+#term-interrupt, #term-eof { flex: none; margin-left: 8px; padding: 6px 12px; border: 1px solid var(--border); background: var(--bg-elev2); color: var(--fg-dim); border-radius: 8px; cursor: pointer; font-size: 12.5px; white-space: nowrap; transition: all .12s; }
+#term-interrupt:hover { color: #fff; background: var(--red); border-color: var(--red); }
+#term-eof:hover { color: var(--fg); border-color: var(--faint); }

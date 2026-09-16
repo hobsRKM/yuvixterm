@@ -184,6 +184,7 @@ class ConnectionManager {
 
   write(tabId, data) {
     const entry = this.conns.get(tabId);
+    if (process.env.MSSH_DEBUG) console.log('[write ' + tabId + '] codes=' + JSON.stringify(Array.from(String(data)).map((c) => c.charCodeAt(0))) + ' shell=' + !!(entry && entry.shell));
     if (entry && entry.shell) entry.shell.write(data);
   }
 
