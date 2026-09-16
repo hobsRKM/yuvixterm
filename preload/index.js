@@ -27,6 +27,10 @@ contextBridge.exposeInMainWorld('api', {
   dialog: {
     pickKey: (current) => invoke('dialog:pickKey', { current }),
   },
+  clipboard: {
+    read: () => invoke('clipboard:read'),
+    write: (text) => invoke('clipboard:write', { text }),
+  },
   fm: {
     home: (tabId) => invoke('fm:home', { tabId }),
     localList: (p) => invoke('fm:localList', { path: p }),

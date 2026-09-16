@@ -127,6 +127,25 @@ body {
 .dt-free { font-size: 10.5px; color: var(--fg-faint); margin-top: 3px; }
 .mon-tip .tip-empty { color: var(--fg-faint); font-size: 12px; }
 
+/* Terminal right-click menu */
+.ctx-menu { position: fixed; z-index: 80; min-width: 196px; background: var(--bg-elev2); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 5px; font-size: 13px; }
+.ctx-menu .mi { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; color: var(--fg); padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.ctx-menu .mi:hover:not([disabled]) { background: var(--accent); color: #fff; }
+.ctx-menu .mi:hover:not([disabled]) .mi-k { color: rgba(255,255,255,.75); }
+.ctx-menu .mi[disabled] { color: var(--fg-faint); cursor: default; }
+.ctx-menu .mi-k { margin-left: auto; color: var(--fg-faint); font-size: 11px; }
+.ctx-sep { height: 1px; background: var(--border-soft); margin: 5px 6px; }
+.ctx-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--fg-faint); font-weight: 700; }
+.ctx-head { padding: 3px 10px 3px; }
+.ctx-zoom { display: flex; align-items: center; justify-content: space-between; padding: 4px 10px 6px; }
+.ctx-zbtns { display: flex; align-items: center; gap: 6px; }
+.ctx-zbtns button { min-width: 28px; height: 24px; border: 1px solid var(--border); background: var(--bg-elev); color: var(--fg); border-radius: 6px; cursor: pointer; font-size: 12px; }
+.ctx-zbtns button:hover { border-color: var(--accent); color: var(--accent); }
+.ctx-zbtns b { min-width: 22px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 650; }
+.ctx-menu .mi.theme .tick { width: 12px; flex: none; color: var(--accent); font-size: 11px; }
+.ctx-menu .mi.theme.on { color: var(--accent); font-weight: 600; }
+.ctx-menu .mi.theme.on:hover { color: #fff; }
+
 /* Modal / editor */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(4, 7, 12, .62); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 50; }
 .modal { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px; width: 480px; max-height: 88vh; overflow-y: auto; padding: 22px 24px; box-shadow: var(--shadow); }

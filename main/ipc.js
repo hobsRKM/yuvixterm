@@ -1,5 +1,5 @@
 'use strict';
-const { ipcMain, dialog, BrowserWindow } = require('electron');
+const { ipcMain, dialog, BrowserWindow, clipboard } = require('electron');
 const os = require('node:os');
 const path = require('node:path');
 
@@ -44,6 +44,13 @@ function registerIpc({ store, connections, files }) {
   });
   ipcMain.handle('conn:answerHostKey', (_e, { tabId, accept }) => {
     connections.answerHostKey(String(tabId), !!accept);
+  });
+
+  // Clipboard for the terminal copy/paste menu (renderer is sandboxed).
+  ipcMain.handle('clipboard:read', () => clipboard.readText());
+  ipcMain.handle('clipboard:write', (_e, { text }) => {
+    clipboard.writeText(String(text == null ? '' : text));
+    return { ok: true };
   });
 
   ipcMain.handle('dialog:pickKey', async (_e, { current } = {}) => {

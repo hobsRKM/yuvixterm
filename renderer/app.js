@@ -2,15 +2,59 @@
 /* Renderer controller: sidebar + tabs + xterm terminals + remote monitor.
    Talks to main only through window.api (see preload). */
 (() => {
-  const XTERM_THEME = {
-    background: '#181825', foreground: '#cdd6f4', cursor: '#f5e0dc',
-    selectionBackground: '#585b70',
-    black: '#45475a', red: '#f38ba8', green: '#a6e3a1', yellow: '#f9e2af',
-    blue: '#89b4fa', magenta: '#f5c2e7', cyan: '#94e2d5', white: '#bac2de',
-    brightBlack: '#585b70', brightRed: '#f38ba8', brightGreen: '#a6e3a1',
-    brightYellow: '#f9e2af', brightBlue: '#89b4fa', brightMagenta: '#f5c2e7',
-    brightCyan: '#94e2d5', brightWhite: '#a6adc8',
+  // Selectable terminal colour schemes (xterm palettes).
+  const THEMES = {
+    'Catppuccin': {
+      background: '#181825', foreground: '#cdd6f4', cursor: '#f5e0dc',
+      selectionBackground: '#585b70',
+      black: '#45475a', red: '#f38ba8', green: '#a6e3a1', yellow: '#f9e2af',
+      blue: '#89b4fa', magenta: '#f5c2e7', cyan: '#94e2d5', white: '#bac2de',
+      brightBlack: '#585b70', brightRed: '#f38ba8', brightGreen: '#a6e3a1',
+      brightYellow: '#f9e2af', brightBlue: '#89b4fa', brightMagenta: '#f5c2e7',
+      brightCyan: '#94e2d5', brightWhite: '#a6adc8',
+    },
+    'Dracula': {
+      background: '#282a36', foreground: '#f8f8f2', cursor: '#f8f8f0',
+      selectionBackground: '#44475a',
+      black: '#21222c', red: '#ff5555', green: '#50fa7b', yellow: '#f1fa8c',
+      blue: '#bd93f9', magenta: '#ff79c6', cyan: '#8be9fd', white: '#f8f8f2',
+      brightBlack: '#6272a4', brightRed: '#ff6e6e', brightGreen: '#69ff94',
+      brightYellow: '#ffffa5', brightBlue: '#d6acff', brightMagenta: '#ff92df',
+      brightCyan: '#a4ffff', brightWhite: '#ffffff',
+    },
+    'Solarized Dark': {
+      background: '#002b36', foreground: '#93a1a1', cursor: '#93a1a1',
+      selectionBackground: '#073642',
+      black: '#073642', red: '#dc322f', green: '#859900', yellow: '#b58900',
+      blue: '#268bd2', magenta: '#d33682', cyan: '#2aa198', white: '#eee8d5',
+      brightBlack: '#586e75', brightRed: '#cb4b16', brightGreen: '#586e75',
+      brightYellow: '#657b83', brightBlue: '#839496', brightMagenta: '#6c71c4',
+      brightCyan: '#93a1a1', brightWhite: '#fdf6e3',
+    },
+    'Light': {
+      background: '#fdf6e3', foreground: '#586e75', cursor: '#586e75',
+      selectionBackground: '#eee8d5',
+      black: '#073642', red: '#dc322f', green: '#859900', yellow: '#b58900',
+      blue: '#268bd2', magenta: '#d33682', cyan: '#2aa198', white: '#657b83',
+      brightBlack: '#93a1a1', brightRed: '#cb4b16', brightGreen: '#586e75',
+      brightYellow: '#657b83', brightBlue: '#839496', brightMagenta: '#6c71c4',
+      brightCyan: '#93a1a1', brightWhite: '#002b36',
+    },
   };
+  const THEME_NAMES = Object.keys(THEMES);
+  const DEFAULT_PREFS = { fontSize: 13, theme: 'Catppuccin' };
+
+  // Per-viewer terminal preferences, remembered locally (best-effort).
+  function loadPrefs() {
+    try {
+      const raw = JSON.parse(localStorage.getItem('yx.prefs') || '{}');
+      const fontSize = Math.max(9, Math.min(24, parseInt(raw.fontSize, 10) || DEFAULT_PREFS.fontSize));
+      const theme = THEMES[raw.theme] ? raw.theme : DEFAULT_PREFS.theme;
+      return { fontSize, theme };
+    } catch { return { ...DEFAULT_PREFS }; }
+  }
+  const prefs = loadPrefs();
+  const savePrefs = () => { try { localStorage.setItem('yx.prefs', JSON.stringify(prefs)); } catch { /* */ } };
 
   let sessions = [];
   const tabs = new Map(); // tabId -> {tabId, session, term, fit, paneEl, tabEl, status, metrics, _banner}
@@ -132,12 +176,31 @@
 
     const term = new Terminal({
       fontFamily: 'ui-monospace, Menlo, monospace',
-      fontSize: 13, cursorBlink: true, scrollback: 5000, theme: XTERM_THEME,
+      fontSize: prefs.fontSize, cursorBlink: true, scrollback: 5000, theme: THEMES[prefs.theme],
     });
     const fit = new FitAddon.FitAddon();
     term.loadAddon(fit);
     term.open(host);
     term.onData((d) => window.api.conn.write(tabId, d));
+    // Copy / paste / zoom shortcuts. Plain Ctrl+C is left alone so it still
+    // sends SIGINT — copy is Cmd+C (mac) or Ctrl+Shift+C.
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.type !== 'keydown') return true;
+      const mod = e.metaKey || e.ctrlKey;
+      const k = e.key.toLowerCase();
+      if ((e.metaKey && k === 'c') || (e.ctrlKey && e.shiftKey && k === 'c')) {
+        const s = term.getSelection(); if (s) window.api.clipboard.write(s);
+        return false;
+      }
+      if ((e.metaKey && k === 'v') || (e.ctrlKey && e.shiftKey && k === 'v')) {
+        window.api.clipboard.read().then((txt) => { if (txt) window.api.conn.write(tabId, txt); });
+        return false;
+      }
+      if (mod && (k === '=' || k === '+')) { setFontSize(prefs.fontSize + 1); return false; }
+      if (mod && k === '-') { setFontSize(prefs.fontSize - 1); return false; }
+      if (mod && k === '0') { setFontSize(DEFAULT_PREFS.fontSize); return false; }
+      return true;
+    });
     // Keep keystrokes (incl. Ctrl+C / Ctrl+Z) flowing: any click in the terminal
     // pane refocuses the terminal, so focus never gets stranded on padding/output.
     pane.addEventListener('mousedown', () => setTimeout(() => term.focus(), 0));
@@ -164,6 +227,90 @@
       window.api.conn.resize(t.tabId, t.term.cols, t.term.rows);
     } catch { /* pane not visible yet */ }
   }
+
+  // ---------- terminal preferences (font size + theme) ----------
+  function applyTermPrefs() {
+    for (const [, t] of tabs) {
+      t.term.options.fontSize = prefs.fontSize;
+      t.term.options.theme = THEMES[prefs.theme];
+    }
+    const t = tabs.get(activeTab);
+    if (t) fitActive(t);
+    savePrefs();
+  }
+  function setFontSize(px) {
+    const v = Math.max(9, Math.min(24, px | 0));
+    if (v === prefs.fontSize) return;
+    prefs.fontSize = v;
+    applyTermPrefs();
+  }
+  function setTheme(name) {
+    if (!THEMES[name] || name === prefs.theme) return;
+    prefs.theme = name;
+    applyTermPrefs();
+  }
+
+  // ---------- terminal right-click menu ----------
+  const activeTerm = () => { const t = tabs.get(activeTab); return t ? t.term : null; };
+  const termMenu = document.createElement('div');
+  termMenu.className = 'ctx-menu';
+  termMenu.hidden = true;
+  document.body.appendChild(termMenu);
+  let menuXY = { x: 0, y: 0 };
+
+  function showTermMenu(x, y) {
+    if (x != null) menuXY = { x, y };
+    const term = activeTerm();
+    const hasSel = !!(term && term.hasSelection && term.hasSelection());
+    termMenu.innerHTML =
+      `<button class="mi" data-act="copy"${hasSel ? '' : ' disabled'}>Copy<span class="mi-k">⌘C</span></button>` +
+      `<button class="mi" data-act="paste">Paste<span class="mi-k">⌘V</span></button>` +
+      `<button class="mi" data-act="selall">Select All</button>` +
+      `<button class="mi" data-act="clear">Clear</button>` +
+      `<div class="ctx-sep"></div>` +
+      `<div class="ctx-zoom"><span class="ctx-lbl">Text size</span><span class="ctx-zbtns">` +
+        `<button data-act="zoom-out" title="Smaller">A−</button><b>${prefs.fontSize}</b>` +
+        `<button data-act="zoom-in" title="Bigger">A+</button>` +
+        `<button data-act="zoom-reset" title="Reset">⟲</button></span></div>` +
+      `<div class="ctx-sep"></div>` +
+      `<div class="ctx-lbl ctx-head">Theme</div>` +
+      THEME_NAMES.map((n) =>
+        `<button class="mi theme${n === prefs.theme ? ' on' : ''}" data-act="theme" data-theme="${escapeHtml(n)}">` +
+        `<span class="tick">${n === prefs.theme ? '✓' : ''}</span>${escapeHtml(n)}</button>`).join('');
+    termMenu.hidden = false;
+    const mw = termMenu.offsetWidth, mh = termMenu.offsetHeight;
+    termMenu.style.left = Math.max(8, Math.min(menuXY.x, window.innerWidth - mw - 8)) + 'px';
+    termMenu.style.top = Math.max(8, Math.min(menuXY.y, window.innerHeight - mh - 8)) + 'px';
+  }
+  const hideTermMenu = () => { termMenu.hidden = true; };
+
+  termMenu.addEventListener('click', async (e) => {
+    e.stopPropagation(); // never let this bubble to the document dismiss handler
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const act = btn.dataset.act;
+    const term = activeTerm();
+    // These keep the menu open so the user can keep adjusting.
+    if (act === 'zoom-in') { setFontSize(prefs.fontSize + 1); return showTermMenu(); }
+    if (act === 'zoom-out') { setFontSize(prefs.fontSize - 1); return showTermMenu(); }
+    if (act === 'zoom-reset') { setFontSize(DEFAULT_PREFS.fontSize); return showTermMenu(); }
+    if (act === 'theme') { setTheme(btn.dataset.theme); return showTermMenu(); }
+    // These act once and close.
+    if (act === 'copy' && term) { const s = term.getSelection(); if (s) await window.api.clipboard.write(s); }
+    else if (act === 'paste' && activeTab) { const txt = await window.api.clipboard.read(); if (txt) window.api.conn.write(activeTab, txt); }
+    else if (act === 'selall' && term) term.selectAll();
+    else if (act === 'clear' && term) term.clear();
+    hideTermMenu();
+    if (term) term.focus();
+  });
+  terminals.addEventListener('contextmenu', (e) => {
+    if (!activeTerm()) return;
+    e.preventDefault();
+    showTermMenu(e.clientX, e.clientY);
+  });
+  document.addEventListener('click', () => { if (!termMenu.hidden) hideTermMenu(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTermMenu(); }, true);
+  window.addEventListener('blur', hideTermMenu);
 
   function activateTab(tabId) {
     activeTab = tabId;
