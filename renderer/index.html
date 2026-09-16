@@ -30,13 +30,19 @@
         <div id="files-dock" hidden></div>
       </div>
       <div id="monitor">
-        <div class="stat sg" data-k="cpu"><div class="sh"><span class="sk">CPU</span><span class="sv">—</span></div><canvas class="spark"></canvas></div>
-        <div class="stat sg" data-k="ram"><div class="sh"><span class="sk">RAM</span><span class="sv">—</span></div><canvas class="spark"></canvas></div>
-        <div class="stat sg" data-k="net"><div class="sh"><span class="sk">NET</span><span class="sv">—</span></div><canvas class="spark"></canvas></div>
-        <div class="stat sc" id="mon-disk"><span class="sk">DISK</span><span class="sv">—</span></div>
-        <div class="stat sc" id="mon-load"><span class="sk">LOAD</span><span class="sv">—</span></div>
-        <div class="stat sc" id="mon-up"><span class="sk">UPTIME</span><span class="sv">—</span></div>
-        <div class="conn-chip"><span class="cdot"></span><span class="ch" id="mon-host">—</span><span class="cu" id="mon-user"></span></div>
+        <div class="mon-graphs">
+          <div class="gcell" data-k="cpu"><div class="gh"><span class="gk">CPU</span><span class="gv">—</span></div><canvas class="spark"></canvas></div>
+          <div class="gcell" data-k="ram"><div class="gh"><span class="gk">MEM</span><span class="gv">—</span></div><canvas class="spark"></canvas></div>
+          <div class="gcell" data-k="net"><div class="gh"><span class="gk">NET</span><span class="gv">—</span></div><canvas class="spark"></canvas></div>
+          <div class="gcell" data-k="disk"><div class="gh"><span class="gk">DISK</span><span class="gv">—</span></div><div class="gbar"><span class="track"><i></i></span></div></div>
+        </div>
+        <div class="mon-info">
+          <div class="istack">
+            <div class="irow"><span class="ik">LOAD</span><span class="iv" id="mon-load">—</span></div>
+            <div class="irow"><span class="ik">UP</span><span class="iv" id="mon-up">—</span></div>
+          </div>
+          <div class="conn-chip"><span class="cdot"></span><span class="ch" id="mon-host">—</span><span class="cu" id="mon-user"></span></div>
+        </div>
       </div>
     </section>
   </div>

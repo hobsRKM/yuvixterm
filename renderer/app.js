@@ -38,7 +38,7 @@
     const maxBits = Math.max(rxBytes, txBytes) * 8;
     let u = units[0];
     for (const c of units) if (maxBits >= c[1]) u = c;
-    const f = (bytes) => { const v = (bytes * 8) / u[1]; return v >= 100 || u[1] === 1 ? v.toFixed(0) : v.toFixed(1); };
+    const f = (bytes) => { const v = (bytes * 8) / u[1]; return v >= 10 || u[1] === 1 ? v.toFixed(0) : v.toFixed(1); };
     return `↓${f(rxBytes)} ↑${f(txBytes)} ${u[0]}`;
   };
   function humanUptime(sec) {
@@ -343,13 +343,16 @@
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, hg);
+    // faint baseline so a flat/empty series still reads as a graph
+    ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, hg - 1); ctx.lineTo(w, hg - 1); ctx.stroke();
     const stepX = w / (MON_PTS - 1);
     for (const s of series) {
       const data = s.data;
       if (!data || data.length < 2) continue;
       const max = yMax || Math.max(1, ...data);
       const x0 = w - (data.length - 1) * stepX;
-      const pts = data.map((v, i) => [x0 + i * stepX, hg - 1 - (Math.min(v, max) / max) * (hg - 2)]);
+      const pts = data.map((v, i) => [x0 + i * stepX, hg - 1.5 - (Math.min(v, max) / max) * (hg - 3)]);
       const trace = () => {
         ctx.moveTo(pts[0][0], pts[0][1]);
         for (let i = 1; i < pts.length; i++) {
@@ -366,32 +369,46 @@
         ctx.fillStyle = g; ctx.fill();
       }
       ctx.beginPath(); trace();
-      ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.strokeStyle = s.color; ctx.stroke();
+      ctx.lineWidth = 1.75; ctx.lineJoin = 'round'; ctx.strokeStyle = s.color; ctx.stroke();
+      // current-value dot at the leading edge
+      const last = pts[pts.length - 1];
+      ctx.beginPath(); ctx.arc(last[0], last[1], 2, 0, Math.PI * 2); ctx.fillStyle = s.color; ctx.fill();
     }
   }
 
-  const gCanvas = (k) => document.querySelector(`#monitor .sg[data-k="${k}"] canvas`);
-  const setV = (k, v) => { const e = document.querySelector(`#monitor .sg[data-k="${k}"] .sv`); if (e) e.textContent = v; };
-  const setChip = (id, v) => { const e = document.querySelector(`#${id} .sv`); if (e) e.textContent = v; };
+  const gCanvas = (k) => document.querySelector(`#monitor .gcell[data-k="${k}"] canvas`);
+  const setV = (k, v) => { const e = document.querySelector(`#monitor .gcell[data-k="${k}"] .gv`); if (e) e.textContent = v; };
+  const fmtLoad = (x) => { const n = parseFloat(x); return isFinite(n) ? n.toFixed(2) : '—'; };
+
+  // DISK renders as a colour-graded fill bar rather than a sparkline (it barely changes).
+  function setDisk(pct) {
+    setV('disk', pct != null ? Math.round(pct) + '%' : '—');
+    const bar = document.querySelector('#monitor .gcell[data-k="disk"] .track > i');
+    if (!bar) return;
+    const p = pct != null ? Math.max(0, Math.min(100, pct)) : 0;
+    bar.style.width = p + '%';
+    bar.style.background = p >= 90 ? 'var(--red)' : p >= 70 ? 'var(--yellow)' : 'var(--green)';
+  }
 
   function clearMonitor() {
     ['cpu', 'ram', 'net'].forEach((k) => { const cv = gCanvas(k); if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); setV(k, '—'); });
-    setChip('mon-disk', '—'); setChip('mon-load', '—'); setChip('mon-up', '—');
+    setDisk(null);
+    el('mon-load').textContent = '—'; el('mon-up').textContent = '—';
     el('mon-host').textContent = '—'; el('mon-user').textContent = '';
   }
 
   function renderMonitor(t) {
     if (!t) return clearMonitor();
     const m = t.metrics, h = t.history, s = t.session || {};
-    drawSpark(gCanvas('cpu'), [{ data: h.cpu, color: '#58a6ff', fill: 'rgba(88,166,255,0.40)' }], 100);
-    drawSpark(gCanvas('ram'), [{ data: h.ram, color: '#3fb950', fill: 'rgba(63,185,80,0.34)' }], 100);
-    drawSpark(gCanvas('net'), [{ data: h.rx, color: '#56d4dd' }, { data: h.tx, color: '#bc8cff' }], Math.max(1024, ...h.rx, ...h.tx));
+    drawSpark(gCanvas('cpu'), [{ data: h.cpu, color: '#58a6ff', fill: 'rgba(88,166,255,0.45)' }], 100);
+    drawSpark(gCanvas('ram'), [{ data: h.ram, color: '#3fb950', fill: 'rgba(63,185,80,0.40)' }], 100);
+    drawSpark(gCanvas('net'), [{ data: h.rx, color: '#56d4dd', fill: 'rgba(86,212,221,0.28)' }, { data: h.tx, color: '#bc8cff' }], Math.max(1024, ...h.rx, ...h.tx));
     setV('cpu', m && m.cpuPct != null ? Math.round(m.cpuPct) + '%' : '—');
     setV('ram', m && m.memTotal ? humanMem(m.memUsed, m.memTotal) : '—');
     setV('net', m && m.netRxRate != null ? fmtNet(m.netRxRate, m.netTxRate) : '—');
-    setChip('mon-disk', m && m.diskPct != null ? m.diskPct + '%' : '—');
-    setChip('mon-load', m && m.load ? `${m.load.one} ${m.load.five} ${m.load.fifteen}` : '—');
-    setChip('mon-up', m && m.uptime != null ? humanUptime(m.uptime) : '—');
+    setDisk(m && m.diskPct != null ? m.diskPct : null);
+    el('mon-load').innerHTML = m && m.load ? `${fmtLoad(m.load.one)} <span class="dim">${fmtLoad(m.load.five)} ${fmtLoad(m.load.fifteen)}</span>` : '—';
+    el('mon-up').textContent = m && m.uptime != null ? humanUptime(m.uptime) : '—';
     el('mon-host').textContent = s.name || s.host || '—';
     el('mon-user').textContent = s.username ? '· ' + s.username : '';
   }

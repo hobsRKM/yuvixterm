@@ -87,17 +87,27 @@ body {
 .empty { color: var(--fg-faint); text-align: center; margin-top: 24vh; font-size: 13px; line-height: 1.8; }
 .empty b { color: var(--fg-dim); }
 
-/* Monitor bar (modern telemetry) */
-#monitor { display: flex; align-items: stretch; gap: 10px; background: linear-gradient(180deg, #12161d, #0e131a); border-top: 1px solid var(--border); padding: 8px 14px; height: 60px; font-variant-numeric: tabular-nums; }
-.stat { display: flex; flex-direction: column; justify-content: center; }
-.stat.sg { min-width: 134px; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 10px; padding: 5px 11px 4px; gap: 2px; }
-.stat.sg .sh { display: flex; align-items: baseline; justify-content: space-between; }
-.stat .sk { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-faint); }
-.stat.sg .sv { font-size: 12.5px; font-weight: 650; color: var(--fg); }
-.stat.sg canvas.spark { width: 100%; height: 17px; display: block; }
-.stat.sc { justify-content: center; gap: 3px; padding: 0 8px; }
-.stat.sc .sv { font-size: 13px; font-weight: 650; color: var(--fg); }
-.conn-chip { margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 10px; }
+/* Monitor bar (uniform telemetry tiles, MobaXterm-style) */
+#monitor { display: flex; align-items: stretch; gap: 7px; background: linear-gradient(180deg, #12161d, #0e131a); border-top: 1px solid var(--border); padding: 8px 12px; height: 66px; font-variant-numeric: tabular-nums; }
+.mon-graphs { display: flex; gap: 7px; flex: 1 1 auto; min-width: 0; }
+.gcell { flex: 1 1 0; min-width: 0; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 9px; padding: 5px 9px 6px; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+.gcell[data-k="net"] { flex-grow: 1.35; }
+.gcell[data-k="disk"] { flex-grow: .85; }
+.gcell .gh { display: flex; align-items: baseline; justify-content: space-between; gap: 5px; line-height: 1; }
+.gk { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-faint); font-weight: 700; flex: none; }
+.gv { font-size: 12px; font-weight: 650; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; flex: 1 1 auto; }
+.gcell[data-k="net"] .gv { font-size: 11px; letter-spacing: -.01em; }
+.gcell canvas.spark { flex: 1 1 auto; width: 100%; min-height: 0; display: block; }
+.gbar { flex: 1 1 auto; display: flex; align-items: center; }
+.gbar .track { flex: 1; height: 9px; border-radius: 5px; background: var(--bg-inset); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .02); }
+.gbar .track > i { display: block; height: 100%; width: 0; border-radius: 5px; background: var(--green); transition: width .3s, background .3s; }
+.mon-info { flex: none; display: flex; align-items: stretch; gap: 7px; }
+.istack { background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 9px; padding: 4px 12px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.irow { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; line-height: 1; }
+.ik { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-faint); font-weight: 700; }
+.iv { font-size: 12px; font-weight: 650; color: var(--fg); white-space: nowrap; text-align: right; }
+.iv .dim { color: var(--fg-faint); font-weight: 500; font-size: 10.5px; }
+.conn-chip { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 9px; }
 .conn-chip .cdot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); flex: none; }
 .conn-chip .ch { font-weight: 650; }
 .conn-chip .cu { color: var(--fg-faint); font-size: 12px; }
