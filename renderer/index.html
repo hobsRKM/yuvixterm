@@ -35,12 +35,12 @@
           <svg class="mi mi-host" viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="12" rx="3"/><path d="M4.5 6l2.5 2-2.5 2M8 10.5h3.5" stroke="#fff" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="mv" id="mon-host">—</span>
         </span>
-        <span class="ms" data-k="cpu" title="CPU">
+        <span class="ms" data-k="cpu">
           <svg class="mi mi-cpu" viewBox="0 0 16 16"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/><rect x="6" y="6" width="4" height="4" fill="#0d1117"/><path d="M6 1v2M8 1v2M10 1v2M6 13v2M8 13v2M10 13v2M1 6h2M1 8h2M1 10h2M13 6h2M13 8h2M13 10h2" stroke="currentColor" stroke-width="1.2"/></svg>
           <span class="mv" id="mon-cpu">—</span>
         </span>
-        <span class="ms ms-graph" title="CPU history"><canvas id="mon-graph" width="56" height="16"></canvas></span>
-        <span class="ms ms-graph ms-cores" title="Per-core CPU" hidden><canvas id="mon-cores" width="40" height="16"></canvas></span>
+        <span class="ms ms-graph"><canvas id="mon-graph" width="56" height="16"></canvas></span>
+        <span class="ms ms-graph ms-cores" hidden><canvas id="mon-cores" width="40" height="16"></canvas></span>
         <span class="ms" data-k="ram" title="Memory used / total">
           <svg class="mi mi-ram" viewBox="0 0 16 16"><rect x="1" y="4" width="14" height="7" rx="1"/><path d="M3 11v2M6 11v2M9 11v2M12 11v2" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 6.5h2v2h-2zM7 6.5h2v2H7zM10.5 6.5h2v2h-2z" fill="#0d1117"/></svg>
           <span class="mv" id="mon-ram">—</span>
@@ -66,7 +66,7 @@
     </section>
   </div>
   <div id="modal-root"></div>
-  <div id="disk-tip" class="mon-tip" hidden></div>
+  <div id="mon-tip" class="mon-tip" hidden></div>
 
   <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
   <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>

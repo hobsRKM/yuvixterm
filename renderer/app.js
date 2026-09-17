@@ -500,11 +500,15 @@
     ctx.beginPath(); ctx.moveTo(0, Math.round(hg / 2) + .5); ctx.lineTo(w, Math.round(hg / 2) + .5); ctx.stroke();
     if (!data || data.length < 2) return;
     const stepX = w / (MON_PTS - 1), x0 = w - (data.length - 1) * stepX;
-    ctx.beginPath();
-    data.forEach((v, i) => {
-      const x = x0 + i * stepX, y = hg - 1 - (Math.min(100, Math.max(0, v)) / 100) * (hg - 2);
-      if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-    });
+    const pts = data.map((v, i) => [x0 + i * stepX, hg - 1 - (Math.min(100, Math.max(0, v)) / 100) * (hg - 2)]);
+    const trace = () => pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    // filled area under the trace, then the trace itself
+    const yTop = Math.min(...pts.map((p) => p[1])); // anchor the gradient at the trace peak so low loads still read as filled
+    const g = ctx.createLinearGradient(0, yTop, 0, hg);
+    g.addColorStop(0, 'rgba(46,230,46,.62)'); g.addColorStop(1, 'rgba(46,230,46,.22)');
+    ctx.beginPath(); trace(); ctx.lineTo(pts[pts.length - 1][0], hg); ctx.lineTo(pts[0][0], hg); ctx.closePath();
+    ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); trace();
     ctx.strokeStyle = '#2ee62e'; ctx.lineWidth = 1.25; ctx.lineJoin = 'round'; ctx.stroke();
   }
 
@@ -566,8 +570,7 @@
     drawCpuGraph(el('mon-graph'), []);
     drawCoreBars(el('mon-cores'), []);
     for (const id of ['mon-host', 'mon-cpu', 'mon-ram', 'mon-tx', 'mon-rx', 'mon-up', 'mon-user']) setText(id, '—');
-    const cpu = document.querySelector('#monitor .ms[data-k="cpu"]'); if (cpu) cpu.title = 'CPU';
-    monDisks = []; renderDisks([]); hideDiskTip();
+    monMetrics = null; monDisks = []; renderDisks([]); hideTip();
   }
 
   function renderMonitor(t) {
@@ -577,28 +580,24 @@
     setText('mon-user', s.username || '—');
     setText('mon-cpu', m && m.cpuPct != null ? Math.round(m.cpuPct) + '%' : '—');
     drawCpuGraph(el('mon-graph'), h.cpu);
-    const cores = m && Array.isArray(m.corePct) ? m.corePct : [];
-    drawCoreBars(el('mon-cores'), cores);
-    const coreCell = document.querySelector('#monitor .ms-cores');
-    if (coreCell && cores.length) {
-      let hot = 0; cores.forEach((v, i) => { if (v > cores[hot]) hot = i; });
-      coreCell.title = `${cores.length} cores · busiest: cpu${hot} ${Math.round(cores[hot])}%\n` + cores.map((v, i) => `cpu${i} ${Math.round(v)}%`).join('  ');
-    }
+    drawCoreBars(el('mon-cores'), m && Array.isArray(m.corePct) ? m.corePct : []);
+    monMetrics = m || null;
     setText('mon-ram', m && m.memTotal ? `${fmtSize2(m.memUsed)} / ${fmtSize2(m.memTotal)}` : '—');
     setText('mon-tx', m && m.netTxRate != null ? fmtBits2(m.netTxRate) : '—');
     setText('mon-rx', m && m.netRxRate != null ? fmtBits2(m.netRxRate) : '—');
     setText('mon-up', m && m.uptime != null ? fmtUptimeWords(m.uptime) : '—');
-    const cpu = document.querySelector('#monitor .ms[data-k="cpu"]');
-    if (cpu) cpu.title = m && m.load ? `CPU · load ${fmtLoad(m.load.one)} ${fmtLoad(m.load.five)} ${fmtLoad(m.load.fifteen)}` : 'CPU';
     monDisks = (m && Array.isArray(m.disks)) ? m.disks : [];
     renderDisks(monDisks);
-    if (!el('disk-tip').hidden) renderDiskTip(); // live-refresh if open
+    refreshTip(); // live-refresh whichever panel is open
   }
 
-  // ---------- disk hover panel (all mounts) ----------
-  function renderDiskTip() {
-    const tip = el('disk-tip');
-    if (!monDisks.length) { tip.innerHTML = '<div class="tip-h">Disks</div><div class="tip-empty">No disk data yet…</div>'; return; }
+  // ---------- hover panels: disks (all mounts) · CPU (all cores) ----------
+  // One shared panel (#mon-tip), anchored above whichever strip cell is hovered.
+  let monMetrics = null; // latest metrics of the active tab, for the CPU panel
+  let tipKind = null;    // 'disk' | 'cpu' while a panel is open
+
+  function diskTipHtml() {
+    if (!monDisks.length) return '<div class="tip-h">Disks</div><div class="tip-empty">No disk data yet…</div>';
     const rows = monDisks.map((d) => {
       const p = Math.max(0, Math.min(100, d.pct));
       return `<div class="dt-row">
@@ -608,22 +607,44 @@
         <div class="dt-free">${fmtKB(d.availKb)} free · ${escapeHtml(d.fs)}</div>
       </div>`;
     }).join('');
-    tip.innerHTML = `<div class="tip-h">Disks · ${monDisks.length} mounted</div>${rows}`;
+    return `<div class="tip-h">Disks · ${monDisks.length} mounted</div>${rows}`;
   }
-  function showDiskTip() {
-    const tip = el('disk-tip'), anchor = el('mon-disks');
-    if (!anchor) return;
-    renderDiskTip();
+
+  function cpuTipHtml() {
+    const m = monMetrics;
+    if (!m) return '<div class="tip-h">CPU</div><div class="tip-empty">No CPU data yet…</div>';
+    const cores = Array.isArray(m.corePct) ? m.corePct : [];
+    const load = m.load ? ` · load ${fmtLoad(m.load.one)} ${fmtLoad(m.load.five)} ${fmtLoad(m.load.fifteen)}` : '';
+    const head = `CPU ${Math.round(m.cpuPct || 0)}%`;
+    if (!cores.length) return `<div class="tip-h">${head}${load}</div><div class="tip-empty">Per-core figures arrive with the next sample…</div>`;
+    let hot = 0; cores.forEach((v, i) => { if (v > cores[hot]) hot = i; });
+    const cols = Math.min(4, Math.ceil(cores.length / 16)); // 16 rows per column, up to 4 columns
+    const rows = cores.map((v, i) => {
+      const p = Math.max(0, Math.min(100, v));
+      return `<div class="ct-row${i === hot ? ' hot' : ''}"><span class="ct-name">cpu${i}</span>` +
+        `<span class="dt-track"><i style="width:${p}%;background:${diskColor(p)}"></i></span><span class="ct-pct">${Math.round(p)}%</span></div>`;
+    }).join('');
+    return `<div class="tip-h">${head} · ${cores.length} cores · busiest cpu${hot} ${Math.round(cores[hot])}%${load}</div>` +
+      `<div class="ct-grid" style="--cols:${cols}">${rows}</div>`;
+  }
+
+  function showTip(kind, anchor) {
+    const tip = el('mon-tip');
+    if (!tip || !anchor) return;
+    tipKind = kind;
+    tip.innerHTML = kind === 'cpu' ? cpuTipHtml() : diskTipHtml();
     tip.hidden = false;
     const r = anchor.getBoundingClientRect();
     tip.style.bottom = (window.innerHeight - r.top + 8) + 'px';
     tip.style.top = 'auto';
-    // clamp horizontally once we know the panel width
-    const w = tip.offsetWidth;
-    const left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
-    tip.style.left = left + 'px';
+    const w = tip.offsetWidth; // clamp horizontally once the panel width is known
+    tip.style.left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8) + 'px';
   }
-  function hideDiskTip() { const tip = el('disk-tip'); if (tip) tip.hidden = true; }
+  function refreshTip() {
+    const tip = el('mon-tip');
+    if (tip && !tip.hidden && tipKind) tip.innerHTML = tipKind === 'cpu' ? cpuTipHtml() : diskTipHtml();
+  }
+  function hideTip() { const tip = el('mon-tip'); if (tip) tip.hidden = true; tipKind = null; }
 
   // ---------- session editor ----------
   function openEditor(session) {
@@ -747,12 +768,16 @@
   el('files-toggle').addEventListener('click', toggleFiles);
   window.addEventListener('resize', () => { const t = tabs.get(activeTab); if (t) fitActive(t); renderDisks(monDisks); });
 
-  // Mount cells: hover to reveal every mounted filesystem (used/total/free).
+  // Strip hover panels: the mount cells open the disks panel; the CPU %, CPU
+  // history and per-core boxes open the CPU panel.
   (() => {
-    const cells = el('mon-disks');
-    if (!cells) return;
-    cells.addEventListener('mouseenter', showDiskTip);
-    cells.addEventListener('mouseleave', hideDiskTip);
+    const wire = (node, kind) => {
+      if (!node) return;
+      node.addEventListener('mouseenter', () => showTip(kind, node));
+      node.addEventListener('mouseleave', hideTip);
+    };
+    wire(el('mon-disks'), 'disk');
+    for (const sel of ['#monitor .ms[data-k="cpu"]', '#monitor .ms-graph:not(.ms-cores)', '#monitor .ms-cores']) wire(document.querySelector(sel), 'cpu');
   })();
 
   // resizable files dock
