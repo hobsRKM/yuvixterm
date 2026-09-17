@@ -52,11 +52,12 @@ function parseDisks(diskSec) {
   return disks;
 }
 
-/** @returns {{ok:true, cpu, memTotal, memAvail, netRx, netTx, uptime, load1, load5, load15, diskPct} | {ok:false}} */
+/** @returns {{ok:true, cpu, cores, memTotal, memAvail, netRx, netTx, uptime, load1, load5, load15, diskPct} | {ok:false}} */
 function parseSample(raw) {
   if (typeof raw !== 'string' || raw.indexOf('<<<STATS') < 0 || raw.indexOf('STATS>>>') < 0) {
     return { ok: false };
   }
+  raw = raw.replace(/\r\n?/g, '\n'); // tolerate CRLF (odd remote shells, Windows checkouts of the fixtures)
   const statSec = between(raw, '<<<STATS', '<<<MEM');
   const memSec = between(raw, '<<<MEM', '<<<NET');
   const netSec = between(raw, '<<<NET', '<<<UP');
@@ -67,13 +68,22 @@ function parseSample(raw) {
     return { ok: false };
   }
 
-  // CPU aggregate line: "cpu  user nice system idle iowait irq softirq ..."
-  const cpuLine = statSec.split('\n').map((l) => l.trim()).find((l) => /^cpu\s/.test(l));
+  // CPU: the aggregate "cpu  user nice system idle iowait irq softirq ..." line,
+  // plus one "cpuN ..." line per core (same columns).
+  const cpuCounters = (nums) => ({ total: nums.reduce((a, b) => a + b, 0), idle: (nums[3] || 0) + (nums[4] || 0) }); // idle + iowait
+  const statLines = statSec.split('\n').map((l) => l.trim());
+  const cpuLine = statLines.find((l) => /^cpu\s/.test(l));
   if (!cpuLine) return { ok: false };
   const cpuNums = cpuLine.split(/\s+/).slice(1).map(Number);
   if (cpuNums.length < 5 || cpuNums.some((n) => Number.isNaN(n))) return { ok: false };
-  const total = cpuNums.reduce((a, b) => a + b, 0);
-  const idle = (cpuNums[3] || 0) + (cpuNums[4] || 0); // idle + iowait
+  const { total, idle } = cpuCounters(cpuNums);
+  const cores = [];
+  for (const l of statLines) {
+    const m = l.match(/^cpu(\d+)\s+(.*)$/);
+    if (!m) continue;
+    const nums = m[2].split(/\s+/).map(Number);
+    if (nums.length >= 5 && !nums.some((n) => Number.isNaN(n))) cores[Number(m[1])] = cpuCounters(nums);
+  }
 
   const memTotal = matchInt(memSec, /MemTotal:\s+(\d+)/);
   const memAvail = matchInt(memSec, /MemAvailable:\s+(\d+)/);
@@ -98,6 +108,7 @@ function parseSample(raw) {
   return {
     ok: true,
     cpu: { total, idle },
+    cores: cores.filter(Boolean),
     memTotal,
     memAvail: memAvail == null ? memTotal : memAvail,
     netRx, netTx,
@@ -116,24 +127,32 @@ function rate(prev, cur, key, interval) {
   return d > 0 ? Math.round(d / interval) : 0; // guard counter resets
 }
 
+// Busy % between two {total, idle} counter snapshots (0 until counters advance).
+function busyPct(prev, cur) {
+  const dTotal = cur.total - prev.total;
+  const dIdle = cur.idle - prev.idle;
+  if (dTotal <= 0) return 0;
+  const pct = Math.max(0, Math.min(100, (100 * (dTotal - dIdle)) / dTotal));
+  return Math.round(pct * 100) / 100;
+}
+
 /** Combine previous + current sample into display metrics. */
 function computeMetrics(prev, cur, intervalSec) {
   const interval = intervalSec > 0 ? intervalSec : 1;
   if (!cur || !cur.ok) {
-    return { cpuPct: 0, memUsed: null, memTotal: null, memAvail: null,
+    return { cpuPct: 0, corePct: [], memUsed: null, memTotal: null, memAvail: null,
       diskPct: null, disks: [], netRxRate: 0, netTxRate: 0, uptime: null, load: null };
   }
-  let cpuPct = 0;
+  let cpuPct = 0, corePct = [];
   if (prev && prev.ok) {
-    const dTotal = cur.cpu.total - prev.cpu.total;
-    const dIdle = cur.cpu.idle - prev.cpu.idle;
-    if (dTotal > 0) {
-      cpuPct = Math.max(0, Math.min(100, (100 * (dTotal - dIdle)) / dTotal));
-      cpuPct = Math.round(cpuPct * 100) / 100;
-    }
+    cpuPct = busyPct(prev.cpu, cur.cpu);
+    // Per-core needs the same core set in both samples (a hot-plugged CPU just skips one tick).
+    const pc = prev.cores || [], cc = cur.cores || [];
+    if (cc.length && cc.length === pc.length) corePct = cc.map((c, i) => busyPct(pc[i], c));
   }
   return {
     cpuPct,
+    corePct,
     memUsed: cur.memTotal - cur.memAvail,
     memTotal: cur.memTotal,
     memAvail: cur.memAvail,

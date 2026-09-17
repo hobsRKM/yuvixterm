@@ -508,6 +508,34 @@
     ctx.strokeStyle = '#2ee62e'; ctx.lineWidth = 1.25; ctx.lineJoin = 'round'; ctx.stroke();
   }
 
+  // Per-core box: one bar per core, coloured by load (green / amber / red).
+  function drawCoreBars(canvas, pct) {
+    if (!canvas) return;
+    const n = Array.isArray(pct) ? pct.length : 0;
+    const cell = canvas.parentElement;
+    if (cell) cell.hidden = n === 0; // needs two samples before there is anything to show
+    if (!n) return;
+    const wCss = Math.min(120, Math.max(36, n * 5));
+    if (canvas.style.width !== wCss + 'px') canvas.style.width = wCss + 'px';
+    const dpr = window.devicePixelRatio || 1;
+    const w = wCss, hg = canvas.clientHeight || 16;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(hg * dpr)) {
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(hg * dpr);
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, hg);
+    ctx.strokeStyle = 'rgba(46,230,46,.2)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, Math.round(hg / 2) + .5); ctx.lineTo(w, Math.round(hg / 2) + .5); ctx.stroke();
+    const pitch = w / n, gap = pitch >= 3 ? 1 : 0;
+    pct.forEach((v, i) => {
+      const p = Math.max(0, Math.min(100, v));
+      const bh = Math.max(1, Math.round((p / 100) * (hg - 2)));
+      ctx.fillStyle = p >= 85 ? '#f85149' : p >= 50 ? '#d29922' : '#2ee62e';
+      ctx.fillRect(i * pitch + gap / 2, hg - 1 - bh, pitch - gap, bh);
+    });
+  }
+
   const setText = (id, v) => { const e = el(id); if (e) e.textContent = v; };
   const DISK_ICON = '<svg class="mi mi-disk" viewBox="0 0 16 16"><rect x="1.5" y="3" width="13" height="10" rx="2"/><circle cx="8" cy="8" r="2.6" fill="#0d1117"/><circle cx="8" cy="8" r=".9"/><circle cx="12" cy="11" r=".8" fill="#0d1117"/></svg>';
 
@@ -536,6 +564,7 @@
 
   function clearMonitor() {
     drawCpuGraph(el('mon-graph'), []);
+    drawCoreBars(el('mon-cores'), []);
     for (const id of ['mon-host', 'mon-cpu', 'mon-ram', 'mon-tx', 'mon-rx', 'mon-up', 'mon-user']) setText(id, '—');
     const cpu = document.querySelector('#monitor .ms[data-k="cpu"]'); if (cpu) cpu.title = 'CPU';
     monDisks = []; renderDisks([]); hideDiskTip();
@@ -548,6 +577,13 @@
     setText('mon-user', s.username || '—');
     setText('mon-cpu', m && m.cpuPct != null ? Math.round(m.cpuPct) + '%' : '—');
     drawCpuGraph(el('mon-graph'), h.cpu);
+    const cores = m && Array.isArray(m.corePct) ? m.corePct : [];
+    drawCoreBars(el('mon-cores'), cores);
+    const coreCell = document.querySelector('#monitor .ms-cores');
+    if (coreCell && cores.length) {
+      let hot = 0; cores.forEach((v, i) => { if (v > cores[hot]) hot = i; });
+      coreCell.title = `${cores.length} cores · busiest: cpu${hot} ${Math.round(cores[hot])}%\n` + cores.map((v, i) => `cpu${i} ${Math.round(v)}%`).join('  ');
+    }
     setText('mon-ram', m && m.memTotal ? `${fmtSize2(m.memUsed)} / ${fmtSize2(m.memTotal)}` : '—');
     setText('mon-tx', m && m.netTxRate != null ? fmtBits2(m.netTxRate) : '—');
     setText('mon-rx', m && m.netRxRate != null ? fmtBits2(m.netRxRate) : '—');
@@ -765,6 +801,7 @@
         netRxRate: 60000 + Math.abs(Math.sin(i / 4)) * 240000 + Math.random() * 40000,
         netTxRate: 20000 + Math.abs(Math.cos(i / 6)) * 90000,
         uptime: 267060 + i * 2, load: { one: 0.42, five: 0.31, fifteen: 0.20 },
+        corePct: [14, 9, 92, 22, 6, 38, 61, 17].map((c) => Math.max(0, Math.min(100, c + Math.sin(i / 3 + c) * 6))),
         disks: [
           { fs: '/dev/sda1', mount: '/', sizeKb: 41152736, usedKb: 18107204, availKb: 23045532, pct: 44 },
           { fs: '/dev/sdb1', mount: '/data', sizeKb: 515928320, usedKb: 98026380, availKb: 417901940, pct: 19 },

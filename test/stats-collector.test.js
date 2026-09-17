@@ -35,6 +35,18 @@ test('parseSample reads multiple disks and filters pseudo filesystems', () => {
   assert.equal(data.pct, 19);
 });
 
+test('parseSample collects per-core counters and computeMetrics derives per-core busy %', () => {
+  const a = parseSample(read('proc-a.txt'));
+  const b = parseSample(read('proc-b.txt'));
+  assert.equal(a.cores.length, 2);
+  assert.deepEqual(a.cores[0], { total: 4875, idle: 4100 }); // 500+0+250+4000+100+0+25, idle 4000 + iowait 100
+  const m = computeMetrics(a, b, 2);
+  assert.equal(m.corePct.length, 2);
+  assert.equal(m.corePct[0], 18.18); // cpu0: dTotal 440, dIdle 360 -> 80/440
+  assert.equal(m.corePct[1], 91.13); // cpu1: dTotal 620, dIdle 55  -> 565/620
+  assert.deepEqual(computeMetrics(null, b, 2).corePct, []); // needs two samples
+});
+
 test('computeMetrics passes the disks array through', () => {
   const a = parseSample(read('proc-a.txt'));
   const b = parseSample(read('proc-b.txt'));

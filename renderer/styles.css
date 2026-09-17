@@ -103,6 +103,7 @@ body {
 .mi-disk { color: var(--fg-dim); }
 .ms-graph { padding: 0 7px; }
 .ms-graph canvas { width: 56px; height: 16px; display: block; background: #000; border: 1px solid #3a4250; box-sizing: content-box; }
+.ms-cores canvas { width: 40px; } /* widened by JS to fit the core count */
 #mon-disks { display: inline-flex; align-items: stretch; min-width: 0; overflow: hidden; }
 #mon-disks .ms { cursor: help; }
 #mon-disks .ms.hot .mv { color: var(--red); }
